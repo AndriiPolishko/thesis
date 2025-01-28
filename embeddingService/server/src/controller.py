@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from enum import Enum
 
-from .service import return_ok, embed_and_save
+from .service import EmbeddingService
 
 class ItemType(Enum):
   Text = "text"
@@ -15,16 +15,26 @@ class Item(BaseModel):
 
 router = APIRouter()
 
+embedding_service = EmbeddingService()
+
 @router.get("/")
 async def hello_world():
-  return return_ok()
+  return embedding_service.return_ok()
 
 @router.post('/embed-and-save')
 async def embed_and_save(item: Item):
   value = item.value
   type = item.type
   
-  embed_and_save(value)
-  
-  return 'tmp'
+  result = embedding_service.embed_and_save(value)
+    
+  return embedding_service.return_ok()
+
+@router.get('/check-chroma-heartbeat')
+async def check_chroma_heartbeat():
+  return embedding_service.check_chroma_hearbeat()
+
+@router.get('/query-db-by-text')
+async def query_db_by_text(text: str):
+  return embedding_service.query_db_by_text(text)
   

@@ -1,0 +1,1 @@
+To run the application execute this command: `python3 embeddingService/server/app.py`

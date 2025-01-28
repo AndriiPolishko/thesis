@@ -1,3 +1,0 @@
-fastapi[standard]
-sentence-transformers 
-langchain

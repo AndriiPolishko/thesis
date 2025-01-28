@@ -1,0 +1,10 @@
+services:
+  embedding-service:
+    build: ./embeddingService
+    ports:
+      - "8080:8080"
+  chroma-db:
+    image: chromadb/chroma
+    ports:
+      - "8000:8000"
+

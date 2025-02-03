@@ -3,6 +3,8 @@ from langchain.text_splitter import CharacterTextSplitter
 import chromadb
 import uuid
 
+from embeddingService.ragService.src.controller import CreateCampaignDto
+
 
 class EmbeddingService:  
   def __init__(self):
@@ -73,5 +75,15 @@ class EmbeddingService:
     corresponding_document = documents[shortest_distance_index]
     
     return corresponding_document
+
+  '''
+  for now this function not creates a campaign, but generates embeddings
+  '''
+  def create_campaign(self, createCampaignDto: CreateCampaignDto):
+    content = createCampaignDto.textContent
+    emails = createCampaignDto.emails
     
-  
+    first_email = emails[0]
+    
+    
+    

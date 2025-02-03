@@ -1,10 +1,32 @@
 services:
-  embedding-service:
-    build: ./embeddingService
+  # core-service:
+  #   build: ./BE/coreService
+  #   ports:
+  #     - "6543:6543"
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
     ports:
-      - "8080:8080"
-  chroma-db:
-    image: chromadb/chroma
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "8000:8000"
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
 

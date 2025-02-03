@@ -12,6 +12,12 @@ class ItemType(Enum):
 class Item(BaseModel):
   value: str
   type: ItemType
+  
+class CreateCampaignDto(BaseModel):
+  emails: list
+  textContent: str
+  documentContent: str
+  links: list
 
 router = APIRouter()
 
@@ -37,4 +43,8 @@ async def check_chroma_heartbeat():
 @router.get('/query-db-by-text')
 async def query_db_by_text(text: str):
   return embedding_service.query_db_by_text(text)
+
+@router.post('/campaign/create')
+async def create_campaign(createCampaignDto: CreateCampaignDto):
+  return embedding_service.create_campaign()
   

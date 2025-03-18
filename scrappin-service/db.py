@@ -7,6 +7,7 @@ async def connect_to_db():
     return await pg.AsyncConnection.connect(conninfo=connection_string)
 
 async def update_link(link_id, scrapped_url_hash, status, timestamp):
+  try:
     """Updates the link record in the database."""
     aconn = await connect_to_db()
     query = """
@@ -16,3 +17,5 @@ async def update_link(link_id, scrapped_url_hash, status, timestamp):
     """
     await aconn.execute(query, (timestamp, scrapped_url_hash, status, link_id))
     await aconn.commit()
+  except Exception as e:
+    print(e)

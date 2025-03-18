@@ -22,31 +22,35 @@ async def consume():
     await consumer.start()
     logging.info("Kafka consumer started")
 
-    try:
-        async for msg in consumer:
-            message_str = msg.value.decode()
+    async for msg in consumer:
+        message_str = msg.value.decode()
 
-            try:
-                message_obj = json.loads(message_str)
-                link_id, campaign_id, url = (
-                    message_obj.get("id"),
-                    message_obj.get("campaignId"),
-                    message_obj.get("url"),
-                )
+        try:
+            message_obj = json.loads(message_str)
+            link_id, campaign_id, url = (
+                message_obj.get("id"),
+                message_obj.get("campaignId"),
+                message_obj.get("url"),
+            )
 
-                url = add_protocol_if_missing(url)
-                page_text = scrape_url_and_get_text(url)
-                preprocessed_text = get_preprocessed_text(page_text)
-                scrapped_url_hash = generate_text_hash(preprocessed_text)
+            url = add_protocol_if_missing(url)
+            page_text = scrape_url_and_get_text(url)
+            preprocessed_text = get_preprocessed_text(page_text)
+            scrapped_url_hash = generate_text_hash(preprocessed_text)
 
-                now = datetime.now()
-                logging.info(f"Updating link {link_id} with hash {scrapped_url_hash}")
+            now = datetime.now()
+            logging.info(f"Updating link {link_id} with hash {scrapped_url_hash}")
 
-                await update_link(link_id, scrapped_url_hash, "Scrapped", now)
+            await update_link(link_id, scrapped_url_hash, "Scrapped", now)
 
-            except json.JSONDecodeError:
-                logging.error(f"Error decoding message: {message_str}")
+        except json.JSONDecodeError:
+            logging.error(f"Error decoding message: {message_str}")
 
-    finally:
+
+async def stop_consumer():
+    """Stops the Kafka consumer gracefully."""
+    global consumer
+    if consumer:
+        logging.info("🔄 Stopping Kafka consumer...")
         await consumer.stop()
-        logging.info("Kafka consumer stopped")
+        logging.info("✅ Kafka consumer stopped.")

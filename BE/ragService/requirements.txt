@@ -1,5 +1,0 @@
-sentence-transformers
-fastapi
-langchain
-chromadb
-uvicorn[standard]

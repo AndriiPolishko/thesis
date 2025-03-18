@@ -1,0 +1,16 @@
+FROM postgres:latest
+
+# Install build tools and dependencies.
+RUN apt-get update && \
+    apt-get install -y \
+      postgresql-server-dev-all \
+      build-essential \
+      git
+
+# Clone, build, and install pgvector.
+RUN git clone https://github.com/pgvector/pgvector.git && \
+    cd pgvector && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf pgvector

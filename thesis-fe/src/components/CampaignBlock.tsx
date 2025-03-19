@@ -22,7 +22,7 @@ export function CampaignBlock() {
 
     const splittedLinks = links.split(",").map((link) => link.trim());
     // TODO: get the URL from the environment variable
-    const url = 'http://localhost:3000/campaign/create'
+    const url = 'http://localhost:3001/campaign/create'
 
     console.log({
       name: campaignName,

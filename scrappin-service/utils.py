@@ -30,7 +30,7 @@ def get_preprocessed_text(text):
     """Cleans and normalizes text."""
     return re.sub(r'\s+', ' ', text.strip())
 
-def split_text(text, max_tokens=128):
+def chunk_text(text, max_tokens=128):
     """Splits text into chunks based on token limits."""
     sentences = nltk.sent_tokenize(text)
     chunks, current_chunk = [], []

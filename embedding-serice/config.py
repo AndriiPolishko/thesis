@@ -5,9 +5,8 @@ load_dotenv()
 
 # Kafka Configuration
 KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
-KAFKA_CONSUMER_TOPIC = os.getenv("KAFKA_TOPIC", "urls")
-KAFKA_PRODUCER_TOPIC = os.getenv("KAFKA_PRODUCER_TOPIC", "processed-urls")
-KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", "urls-consumer-group")
+KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "chunks")
+KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", "chunks-consumer-group")
 
 # Database Configuration
 DB_HOST = os.getenv("DB_HOST", "localhost")

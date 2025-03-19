@@ -1,10 +1,6 @@
 fastapi
 uvicorn[standard]
-beautifulsoup4
-nltk
 aiokafka
-requests
-xxhash
 sentence-transformers
 psycopg[binary]
 dotenv

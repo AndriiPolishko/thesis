@@ -3,9 +3,10 @@ import logging
 from aiokafka import AIOKafkaConsumer
 from datetime import datetime
 
-from utils import scrape_url_and_get_text, add_protocol_if_missing, get_preprocessed_text, generate_text_hash
+from utils import scrape_url_and_get_text, add_protocol_if_missing, get_preprocessed_text, generate_text_hash, chunk_text
 from db import update_link
-from config import KAFKA_BROKER, KAFKA_TOPIC, KAFKA_GROUP_ID
+from config import KAFKA_BROKER, KAFKA_CONSUMER_TOPIC, KAFKA_GROUP_ID
+from producer import kafka_producer
 
 logging.basicConfig(level=logging.INFO)
 
@@ -13,14 +14,14 @@ async def consume():
     """Consumes messages from Kafka and processes URLs."""
 
     consumer = AIOKafkaConsumer(
-        KAFKA_TOPIC,
+        KAFKA_CONSUMER_TOPIC,
         bootstrap_servers=KAFKA_BROKER,
         group_id=KAFKA_GROUP_ID,
         auto_offset_reset="earliest"
     )
 
     await consumer.start()
-    logging.info("Kafka consumer started")
+    logging.info("✅ Kafka consumer started")
 
     async for msg in consumer:
         message_str = msg.value.decode()
@@ -32,16 +33,26 @@ async def consume():
                 message_obj.get("campaignId"),
                 message_obj.get("url"),
             )
-
             url = add_protocol_if_missing(url)
             page_text = scrape_url_and_get_text(url)
             preprocessed_text = get_preprocessed_text(page_text)
             scrapped_url_hash = generate_text_hash(preprocessed_text)
-
             now = datetime.now()
+            
             logging.info(f"Updating link {link_id} with hash {scrapped_url_hash}")
 
             await update_link(link_id, scrapped_url_hash, "Scrapped", now)
+            
+            chunks = chunk_text(preprocessed_text)
+            
+            for chunk in chunks:
+                message = {
+                    "link_id": link_id,
+                    "campaign_id": campaign_id,
+                    "chunk": chunk
+                }
+                
+                await kafka_producer.send_message(message)
 
         except json.JSONDecodeError:
             logging.error(f"Error decoding message: {message_str}")
@@ -52,5 +63,7 @@ async def stop_consumer():
     global consumer
     if consumer:
         logging.info("🔄 Stopping Kafka consumer...")
+
         await consumer.stop()
+
         logging.info("✅ Kafka consumer stopped.")

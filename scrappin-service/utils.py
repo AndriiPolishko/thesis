@@ -5,19 +5,25 @@ import nltk
 import xxhash
 from bs4 import BeautifulSoup
 from sentence_transformers import SentenceTransformer
+from pydantic import BaseModel
+
 from config import EMBEDDING_MODEL_NAME
 
 # nltk.download("punkt")  # Uncomment if needed
 
 embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
-def scrape_url_and_get_text(url):
+class ScrappingResponse(BaseModel):
+  error: str = None
+  scrapped_text: str = None
+
+def scrape_url_and_get_text(url) -> ScrappingResponse:
     """Scrapes a webpage and returns cleaned text."""
     headers = {'User-Agent': 'Mozilla/5.0'}
     response = requests.get(url, headers=headers)
 
     if response.status_code != 200:
-        return None
+      return ScrappingResponse(error=f"Failed to fetch URL: {url}")
 
     soup = BeautifulSoup(response.text, 'html.parser')
     footer = soup.find("footer")

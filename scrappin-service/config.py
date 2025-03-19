@@ -17,4 +17,4 @@ DB_USER = os.getenv("DB_USER", "root")
 DB_PASS = os.getenv("DB_PASS", "root")
 
 # Embedding Model
-EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL", "paraphrase-MiniLM-L6-v2")
+EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME")

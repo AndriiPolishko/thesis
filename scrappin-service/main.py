@@ -52,10 +52,12 @@ async def process_scraping(urls: list[str], campaign_id: int):
             await database.update_link(link_id, scrapped_url_hash, LinkStatusEnum.Scrapped, now)
 
             chunks = chunk_text(preprocessed_text)
+            # Remove empty chunks
+            chunks = [chunk for chunk in chunks if chunk]
+            
             for chunk in chunks:
                 message = {
                     "link_id": link_id,
-                    "campaign_id": campaign_id,
                     "chunk": chunk
                 }
                 

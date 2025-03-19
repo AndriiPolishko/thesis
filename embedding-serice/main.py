@@ -5,22 +5,26 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from consumer import consume, stop_consumer
+from consumer import chunks_consumer
+from db import database
 
 logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handles startup and shutdown tasks."""
-    consumer_task = asyncio.create_task(consume())  # Start Kafka consumer
+    await chunks_consumer.initialize()
+    consumer_task = asyncio.create_task(chunks_consumer.consume())  # Start Kafka consumer
     yield
+    
     logging.info("Shutting down Kafka consumer...")
-    await stop_consumer()  # Properly stop the consumer
+    await chunks_consumer.stop_consumer()  # Properly stop the consumer
     consumer_task.cancel()
     try:
         await consumer_task
     except asyncio.CancelledError:
         pass
+    await database.close()
 
 app = FastAPI(lifespan=lifespan)
 

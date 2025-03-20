@@ -1,5 +1,7 @@
 import axios from "axios";
 
+import { baseApiUrl } from "../globals";
+
 interface CampaignCreationData {
   campaignName: string;
   campaignDescription: string;
@@ -11,10 +13,9 @@ interface GetCampaignsParams {
   size: number;
 }
 
-const baseUrl = 'http://localhost:8001'
 export const campaignService = {
   createCampaign: async (params: CampaignCreationData) => {
-    const campaignCreateUrl = `${baseUrl}/campaign/create`
+    const campaignCreateUrl = `${baseApiUrl}/campaign/create`
     const { campaignName, campaignDescription, splittedLinks } = params;
     const response = await axios.post(campaignCreateUrl, {
       name: campaignName,
@@ -24,7 +25,7 @@ export const campaignService = {
     return response.data; // React Query prefers returning data only
   },
   getCampaigns: async (params: GetCampaignsParams) => {
-    const getCampaignsUrl = `${baseUrl}/campaign`
+    const getCampaignsUrl = `${baseApiUrl}/campaign`
     const { page, size } = params;
     const response = await axios.get(getCampaignsUrl, {
       params: {

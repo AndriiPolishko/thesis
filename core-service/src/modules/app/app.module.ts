@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LeadModule } from '../lead/lead.module';
 import { CampaignModule } from '../campaign/campaign.module';
+import { CampaignLeadModule } from '../campaign-leads/campaign-lead.module';
 
 
 @Module({
@@ -13,7 +14,8 @@ import { CampaignModule } from '../campaign/campaign.module';
       isGlobal: true,
     }),
     LeadModule, 
-    CampaignModule
+    CampaignModule,
+    CampaignLeadModule
   ],
   controllers: [AppController],
   providers: [AppService],

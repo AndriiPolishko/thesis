@@ -50,22 +50,6 @@ export class CampaignService implements OnModuleInit, OnModuleDestroy {
       const { name, goal, urls } = createCampaignDto;
       const saveCampaignToCoreDbRes = await this.campaignRepository.createCampaign({ name, goal });
       const campaignId = saveCampaignToCoreDbRes.id;
-      
-      // for (const url of urls) {
-      //   // TODO: Handle errors
-      //   const createLinkRes = await this.linkRepository.createLink({ url, campaignId });
-      //   const createdLinkId = createLinkRes.id;
-
-      //   const message = JSON.stringify({ id: createdLinkId, url, campaignId });
-
-      //   await this.urlProducer.send({
-      //     topic: 'urls',
-      //     messages: [{ value: message }],
-      //   });
-
-      //   console.log('Message sent to Kafka');
-      // }
-
       const scrappingServiceResponse = await axios.post('http://127.0.0.1:5003/scrape', {
         urls,
         campaign_id: campaignId

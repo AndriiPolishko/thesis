@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+import { baseApiUrl } from '../globals';
+
 interface LeadCreationData {
   firstName: string;
   lastName: string;
@@ -11,10 +13,9 @@ interface GetLeadsParams {
   size: number;
 }
 
-const baseUrl = 'http://localhost:8001';
 export const leadService = {
   createLead: async (params: LeadCreationData) => {
-    const leadCreationUrl = `${baseUrl}/lead`;
+    const leadCreationUrl = `${baseApiUrl}/lead`;
     const { firstName, lastName, email } = params;
     const response = await axios.post(leadCreationUrl, {
       firstName,
@@ -25,7 +26,7 @@ export const leadService = {
     return response.data;
   },
   getLeads: async (params: GetLeadsParams) => {
-    const getLeadsUrl = `${baseUrl}/lead`
+    const getLeadsUrl = `${baseApiUrl}/lead`
     const { page, size } = params;
     const response = await axios.get(getLeadsUrl, {
       params: {

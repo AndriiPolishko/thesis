@@ -40,5 +40,21 @@ export class CampaignRepository {
     return campaigns;
   }
 
-  
+  async getCampaigns(page: string, size: number) {
+    const query = `
+      SELECT * FROM campaign
+      LIMIT $1 OFFSET $2`;
+
+    const result = await this.databaseService.runQuery(query, [size, (Number(page) - 1) * size]);
+    const campaigns: Campaign[] = result.rows;
+
+    return campaigns;
+  }
+
+  async getTotalCampaigns() {
+    const result = await this.databaseService.runQuery('SELECT COUNT(*) FROM campaign');
+    const totalCampaigns = Number(result.rows[0].count);
+
+    return totalCampaigns;
+  }
 }

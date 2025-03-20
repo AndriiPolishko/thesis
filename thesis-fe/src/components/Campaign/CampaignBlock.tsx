@@ -6,7 +6,7 @@ import {
 } from "@chakra-ui/react";
 import { ChevronDown, ChevronUp, Upload } from "lucide-react";
 
-import { campaignService } from "../api/campaignService";
+import { campaignService } from "../../api/campaignService";
 
 export function CampaignBlock() {
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });

@@ -87,4 +87,15 @@ export class CampaignService implements OnModuleInit, OnModuleDestroy {
   async getAllCampaigns(): Promise<Campaign[]> {
     return this.campaignRepository.getAllCampaigns();
   }
+
+  async getCampaigns(page: string, size: number): Promise<Campaign[]> {
+    return this.campaignRepository.getCampaigns(page, size);
+  }
+
+  async getTotalPages(pageSize: number): Promise<number> {
+    const totalCampaigns = await this.campaignRepository.getTotalCampaigns();
+    const totalPages = Math.ceil(totalCampaigns / pageSize);
+
+    return totalPages;
+  }
 }

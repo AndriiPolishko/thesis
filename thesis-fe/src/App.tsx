@@ -1,7 +1,7 @@
 import { Box, Tabs } from '@chakra-ui/react'
 
-import { Navigation } from './components/Navigation'
-import { Header } from './components/Header'
+import { Navigation } from './components/Navigation/Navigation'
+import { Header } from './components/Header/Header'
 
 export function App() {
   return (

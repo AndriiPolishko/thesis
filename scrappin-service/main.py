@@ -6,12 +6,15 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
+from redis import Redis
 
 from producer import kafka_producer
 from utils import scrape_url_and_get_text, add_protocol_if_missing, get_preprocessed_text, generate_text_hash, chunk_text
 from db import database, LinkStatusEnum
 
 logging.basicConfig(level=logging.INFO)
+
+redis = Redis(host="localhost", port=6379, decode_responses=True)
 
 class ScrapingRequest(pydantic.BaseModel):
     urls: list[str]
@@ -30,6 +33,14 @@ async def lifespan(app: FastAPI):
     await database.close()
 
 app = FastAPI(lifespan=lifespan)
+
+@app.get('/redis/set')
+async def set_key(key: str, value: str):
+    try:
+        redis.set(key, value)
+        return {"message": "Key set"}
+    except Exception as e:
+        return {"message": str(e)}
 
 @app.get("/")
 async def read_root():
@@ -55,13 +66,24 @@ async def process_scraping(urls: list[str], campaign_id: int):
             # Remove empty chunks
             chunks = [chunk for chunk in chunks if chunk]
             
+            # TODO: Add Redis call here if needed
+            redis_campaign_chunks_key = f"campaign:{campaign_id}:chunks"
+            
+            current_amount_of_chunks = redis.get(redis_campaign_chunks_key)
+            if current_amount_of_chunks:
+                current_amount_of_chunks = int(current_amount_of_chunks)
+                redis.setex(redis_campaign_chunks_key, 3600, current_amount_of_chunks + len(chunks))
+            else:
+                redis.setex(redis_campaign_chunks_key, 3600, len(chunks))
+                        
             for chunk in chunks:
                 message = {
                     "link_id": link_id,
-                    "chunk": chunk
+                    "chunk": chunk,
+                    "campaign_id": campaign_id,
                 }
                 
-                # TODO: Add Redis call here if needed
+
                 
                 await kafka_producer.send_message(message)
         except Exception as e:

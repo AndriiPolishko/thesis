@@ -36,5 +36,20 @@ class Database:
         return True
       except Exception as e:
         return False
+
+    async def mark_campaign_ready(self, campaign_id: str):
+      try:
+        if self.conn is None:
+            await self.connect()
+            
+        query = "UPDATE campaign SET status = 'Ready' WHERE id = %s"
+        
+        await self.conn.execute(query, (campaign_id,))
+        
+        await self.conn.commit()
+        
+        return True
+      except Exception as e:
+        return False
       
 database = Database()

@@ -8,3 +8,4 @@ xxhash
 sentence-transformers
 psycopg[binary]
 dotenv
+redis[hiredis]

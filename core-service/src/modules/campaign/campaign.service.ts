@@ -88,7 +88,7 @@ export class CampaignService implements OnModuleInit, OnModuleDestroy {
     return this.campaignRepository.getAllCampaigns();
   }
 
-  async getCampaigns(page: string, size: number): Promise<Campaign[]> {
+  async getCampaigns(page: number, size: number): Promise<Campaign[]> {
     return this.campaignRepository.getCampaigns(page, size);
   }
 

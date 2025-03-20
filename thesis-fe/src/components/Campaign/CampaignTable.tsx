@@ -28,11 +28,10 @@ export function CampaignTable({ onCampaignSelect }: CampaignTableProps) {
     try {
       const data = await campaignService.getCampaigns({ page, size });
 
-      console.log(data);
-
       setCampaigns(data.campaigns);
       setTotalPages(data.totalPages);
     } catch (error) {
+      // TODO: handle better error messages
       console.error('Error fetching campaigns:', error);
     }
   };

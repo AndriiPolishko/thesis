@@ -14,12 +14,10 @@ export function CampaignBlock() {
   const [campaignDescription, setCampaignDescription] = useState("");
   const [links, setLinks] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const toast = useToast(); // Chakra UI toast for notifications
-
   const mutation = useMutation({
     mutationFn: campaignService.createCampaign,
-    onSuccess: (data) => {
+    onSuccess: () => {
       setIsSubmitting(false);
       toast({
         title: "Campaign Created",
@@ -70,9 +68,8 @@ export function CampaignBlock() {
 
     try {
       mutation.mutate({ campaignName, campaignDescription, splittedLinks });
-    } catch (error) {
+    } finally {
       setIsSubmitting(false);
-      console.error(error);
     }
   }
 

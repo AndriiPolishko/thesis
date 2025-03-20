@@ -40,7 +40,7 @@ export class CampaignRepository {
     return campaigns;
   }
 
-  async getCampaigns(page: string, size: number) {
+  async getCampaigns(page: number, size: number) {
     const query = `
       SELECT * FROM campaign
       LIMIT $1 OFFSET $2`;

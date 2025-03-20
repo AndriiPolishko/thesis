@@ -29,7 +29,7 @@ export class CampaignController {
   }
 
   @Get()
-  async getCampaigns(@Query('page') page: string, @Query('size') size: number): Promise<GetCampaignsResponse> {
+  async getCampaigns(@Query('page') page: number, @Query('size') size: number): Promise<GetCampaignsResponse> {
     const campaigns = await this.campaignService.getCampaigns(page, size);
     const totalPages = await this.campaignService.getTotalPages(size);
 

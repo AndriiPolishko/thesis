@@ -1,18 +1,17 @@
-import React from "react";
-import { Box, Container, Heading, VStack } from "@chakra-ui/react";
-import { CampaignBlock } from "./components/CampaignBlock";
-import { LeadBlock } from "./components/LeadBlock";
+import { Box, Tabs } from '@chakra-ui/react'
+
+import { Navigation } from './components/Navigation'
+import { Header } from './components/Header'
+
 export function App() {
-  return <Box w="100%" minH="100vh" bg="gray.50" py={8}>
-      <Container maxW="container.lg">
-        <VStack spacing={8} align="stretch">
-          <Heading size="lg" color="gray.700">
-            Mail Automation Dashboard
-          </Heading>
-          <CampaignBlock />
-           {/* TODO: Uncomment when campaign block is ready */}
-          {/* <LeadBlock /> */}
-        </VStack>
-      </Container>
-    </Box>;
+  return (
+    <Tabs variant="enclosed" colorScheme="blue" w="100%">
+      <Box w="100%" minH="100vh" bg="gray.50">
+        <Header tabIndex={0} onChange={() => {}} />
+        <Box maxW="container.lg" mx="auto" py={8} px={4}>
+          <Navigation />
+        </Box>
+      </Box>
+    </Tabs>
+  )
 }

@@ -1,7 +1,15 @@
 import { ChakraProvider } from "@chakra-ui/react";
-import React from "react";
 import { render } from "react-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import { App } from "./App";
-render(<ChakraProvider>
+
+const queryClient = new QueryClient();
+
+render(
+<QueryClientProvider client={queryClient}> 
+  <ChakraProvider>
     <App />
-  </ChakraProvider>, document.getElementById("root"));
+  </ChakraProvider>
+</QueryClientProvider>, 
+document.getElementById("root"));

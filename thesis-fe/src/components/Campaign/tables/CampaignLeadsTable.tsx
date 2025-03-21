@@ -28,7 +28,14 @@ export function CampaignLeadsTable({ campaignId }: CampaignLeadsTableProps) {
       const data = await campaignLeadsService.getCampaignLeads(campaignId);
       setCampaignLeads(data.campaignLeads || []);
     } catch (error) {
-      console.error('Error fetching campaign leads:', error);
+      toast({
+        title: "Failed to campaign load leads.",
+        description: "Something went wrong while fetching campaign leads.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "top-right"
+      });
     }
   };
 

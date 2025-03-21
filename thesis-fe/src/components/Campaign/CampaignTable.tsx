@@ -1,8 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Table, Thead, Tbody, Tr, Th, Td, Box, Badge, Select, Button } from '@chakra-ui/react';
+import {
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Box,
+  Badge,
+  Select,
+  Button,
+  useToast,
+} from '@chakra-ui/react';
 import { campaignService } from '../../api/campaignService';
 
-// Define the Campaign type
 interface Campaign {
   id: string;
   name: string;
@@ -19,6 +30,7 @@ export function CampaignTable({ onCampaignSelect }: CampaignTableProps) {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const toast = useToast();
 
   useEffect(() => {
     fetchCampaigns();
@@ -30,9 +42,15 @@ export function CampaignTable({ onCampaignSelect }: CampaignTableProps) {
 
       setCampaigns(data.campaigns);
       setTotalPages(data.totalPages);
-    } catch (error) {
-      // TODO: handle better error messages
-      console.error('Error fetching campaigns:', error);
+    } catch (error: any) {
+      toast({
+        title: 'Failed to load campaigns.',
+        description: error?.message || 'Something went wrong while fetching campaigns.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        position: 'top-right',
+      });
     }
   };
 
@@ -54,7 +72,9 @@ export function CampaignTable({ onCampaignSelect }: CampaignTableProps) {
       <Box display="flex" justifyContent="space-between" mb={4}>
         <Select value={size} onChange={(e) => setSize(Number(e.target.value))} w="150px">
           {[5, 10, 20, 50, 100].map((num) => (
-            <option key={num} value={num}>{num} per page</option>
+            <option key={num} value={num}>
+              {num} per page
+            </option>
           ))}
         </Select>
       </Box>
@@ -89,7 +109,9 @@ export function CampaignTable({ onCampaignSelect }: CampaignTableProps) {
         <Button onClick={() => setPage((prev) => Math.max(prev - 1, 1))} isDisabled={page === 1}>
           Previous
         </Button>
-        <Box>Page {page} of {totalPages}</Box>
+        <Box>
+          Page {page} of {totalPages}
+        </Box>
         <Button onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))} isDisabled={page === totalPages}>
           Next
         </Button>

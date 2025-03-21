@@ -1,4 +1,15 @@
-import { Table, Thead, Tbody, Tr, Th, Td, Box, Button, Select } from '@chakra-ui/react'
+import {
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Box,
+  Button,
+  Select,
+  useToast
+} from '@chakra-ui/react'
 import { useEffect, useState } from 'react';
 
 import { leadService } from '../../api/leadService';
@@ -17,6 +28,8 @@ export function LeadTable() {
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
+  const toast = useToast();
+
   useEffect(() => {
     fetchLeads();
   }, [page, size]);
@@ -27,11 +40,18 @@ export function LeadTable() {
 
       setLeads(data.leads);
       setTotalPages(data.totalPages);
-    } catch (error) {
-            // TODO: handle better error messages
-      console.error('Error fetching leads:', error);
+    } catch (error: any) {
+      toast({
+        title: 'Failed to load leads.',
+        description: error?.message || 'Something went wrong while fetching leads.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        position: 'top-right',
+      });
     }
   };
+
   return (
     <Box borderWidth="1px" borderRadius="lg" bg="white" overflow="hidden">
       <Box display="flex" justifyContent="space-between" mb={4}>
@@ -71,5 +91,5 @@ export function LeadTable() {
         </Button>
       </Box>
     </Box>
-  )
+  );
 }

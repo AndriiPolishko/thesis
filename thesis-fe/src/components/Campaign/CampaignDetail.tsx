@@ -33,9 +33,8 @@ interface CampaignDetailProps {
   onBack: () => void
 }
 export function CampaignDetail({ campaign, onBack }: CampaignDetailProps) {
-  const campaignId = campaign.id
+  const campaignId = campaign.id;
   const handleLeadsAdd = (selectedLeads: string[]) => {
-    console.log('Adding leads:', selectedLeads)
     // Handle adding leads to the campaign
   }
   const canStartCampaign = campaign.status === CampaignStatus.Ready;

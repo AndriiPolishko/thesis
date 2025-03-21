@@ -1,3 +1,4 @@
+import { useToast } from '@chakra-ui/react'
 import axios from 'axios'
 import React, { useState, createContext, useContext, useEffect } from 'react'
 
@@ -21,20 +22,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
-  
-  // TODO: Implement login and logout functions
+  const toast = useToast();
   const login = () => setIsAuthenticated(true)
   const logout = () => setIsAuthenticated(false)
 
   async function getUser() {
     axios.get('http://localhost:8001/auth/google/me', { withCredentials: true })
     .then((res) => {
-      console.log(res.data);
       setIsAuthenticated(true);
       setUser(res.data);
     })
-    .catch((error) => {
-      console.log("error: ", error);
+    .catch(() => {
+      toast({
+        title: "Failed to fetch user",
+        description: "Please try again later.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "top-right"
+      });
+
       setIsAuthenticated(false)})
     .finally(() => setLoading(false));
   }
@@ -44,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>; // or a spinner
+    return <div>Loading...</div>;
   }
   
   return (

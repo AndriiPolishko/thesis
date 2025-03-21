@@ -3,7 +3,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { DatabaseService } from '../database/database.service';
 import { Campaign, CampaignCreationResponse, CampaignCreationStatus, CreateCampaignEntity } from "./campaign.dto";
 
-
+// TODO: rename methods according to the repository pattern
 @Injectable()
 export class CampaignRepository {
   constructor(

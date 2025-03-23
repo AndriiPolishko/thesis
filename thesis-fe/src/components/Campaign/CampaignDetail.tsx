@@ -1,3 +1,4 @@
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -9,17 +10,14 @@ import {
   Divider
 } from '@chakra-ui/react'
 import { ArrowLeft } from 'lucide-react'
+import { useQuery, useMutation } from '@tanstack/react-query';
+
 import { CampaignLeadsTable } from './tables/CampaignLeadsTable'
 import { AddLeadsTable } from './tables/AddLeadsTable'
 import { CampaignEventsTable } from './tables/CampaignEventsTable'
-
-enum CampaignStatus {
-  Pending = 'Pending',
-  DataCollected = 'Data Collected',
-  Ready = 'Ready',
-  Active = 'Active',
-  Inactive = 'Inactive',
-}
+import { campaignService } from '../../api/campaignService'
+import { CenterSpinner } from '../Utils/CenterSpinner';
+import { CampaignStatus } from '../../api/campaignService';
 
 type Campaign = {
   id: number
@@ -32,28 +30,67 @@ interface CampaignDetailProps {
   campaign: Campaign
   onBack: () => void
 }
-export function CampaignDetail({ campaign, onBack }: CampaignDetailProps) {
-  const campaignId = campaign.id;
+export function CampaignDetail() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const campaignId = Number(id);
   const handleLeadsAdd = (selectedLeads: string[]) => {
     // Handle adding leads to the campaign
   }
-  const canStartCampaign = campaign.status === CampaignStatus.Ready;
+  const {
+    data: campaign,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ['campaign', campaignId],
+    queryFn: () => campaignService.getCampaignById(campaignId),
+    // prevent running if `id` is undefined
+    enabled: !!campaignId, 
+  });
+
+  const canChangeCampaignStatus = campaign?.status === CampaignStatus.Inactive || campaign?.status === CampaignStatus.Active;
+  const changeCampaignStatusButtonText = 
+    campaign?.status === CampaignStatus.Active
+     ? "Pause Campaign" : "Active Campaign";
+  const changeCampaignStatusButtonTextColor =
+    campaign?.status === CampaignStatus.Active
+      ? "red" : "green";
+  const changeCampaignStatusMutation = useMutation({
+    mutationFn: (params: { campaignId: number, newStatus: CampaignStatus }) => 
+      campaignService.changeCampaignStatus(params),
+    onSuccess: () => {
+      // oast({ title: 'Status updated', status: 'success' });
+      refetch(); // ✅ refetch updated campaign
+    },
+    onError: () => {
+      // toast({ title: 'Failed to update status', status: 'error' });
+    }
+  });
 
   function chooseStatusColor(status: CampaignStatus) {
     switch (status) {
       case CampaignStatus.Active:
         return 'green';
       case CampaignStatus.Inactive:
-        return 'gray';
-      case CampaignStatus.DataCollected:
-        return 'blue';
-      case CampaignStatus.Ready:
-        return 'yellow';
+        return 'red';
       case CampaignStatus.Pending:
-        return 'gray';
+        return 'blue';
       default:
         return 'gray';
       }
+  }
+  async function handleCampaignStart() {
+    const newStatus = campaign?.status === CampaignStatus.Active ? 
+      CampaignStatus.Inactive : CampaignStatus.Active;
+    changeCampaignStatusMutation.mutate({ campaignId, newStatus });
+  }
+
+  function onBack() {
+    navigate('/campaigns');
+  }
+
+  if (isLoading) {
+    return <CenterSpinner />
   }
 
   return (
@@ -70,28 +107,32 @@ export function CampaignDetail({ campaign, onBack }: CampaignDetailProps) {
         <HStack justify="space-between">
         <VStack>
           <HStack justify="space-between">
-            <Heading size="lg">{campaign.name}</Heading>
-            {canStartCampaign && (
-              <Button colorScheme="blue" size="md">
-                Start Campaign
+            <Heading size="lg">{campaign?.name}</Heading>
+            <Button 
+              colorScheme={canChangeCampaignStatus ? changeCampaignStatusButtonTextColor : "gray"}
+              border={`1px solid ${canChangeCampaignStatus ? changeCampaignStatusButtonTextColor : "gray"}`}
+              disabled={!canChangeCampaignStatus}
+              size="md"
+              onClick={handleCampaignStart}
+            >
+                {changeCampaignStatusButtonText}
               </Button>
-            )}
           </HStack>
         </VStack>
         <Badge
-          colorScheme={chooseStatusColor(campaign.status)}
+          colorScheme={chooseStatusColor(campaign?.status)}
           fontSize="md"
           px={3}
           py={1}
         >
-          {campaign.status}
+          {campaign?.status}
         </Badge>
         </HStack>
         <Box>
           <Text fontWeight="bold" mb={2}>
             Campaign Goal
           </Text>
-          <Text>{campaign.goal}</Text>
+          <Text>{campaign?.goal}</Text>
         </Box>
         <Divider/>
         <VStack align="stretch" spacing={4}>

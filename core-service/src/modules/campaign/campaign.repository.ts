@@ -57,4 +57,41 @@ export class CampaignRepository {
 
     return totalCampaigns;
   }
+
+  async getCampaign(campaignId: string) {
+    const query = `
+      SELECT * FROM campaign
+      WHERE id = $1`;
+
+    const result = await this.databaseService.runQuery(query, [campaignId]);
+    const campaign: Campaign = result.rows[0];
+
+    return campaign;
+  }
+
+  async activate(campaignId: string) {
+    const query = `
+      UPDATE campaign
+      SET status = 'active'
+      WHERE id = $1
+      RETURNING *`;
+
+    const result = await this.databaseService.runQuery(query, [campaignId]);
+    const campaign: Campaign = result.rows[0];
+
+    return campaign;
+  }
+
+  async deactivate(campaignId: string) {
+    const query = `
+      UPDATE campaign
+      SET status = 'inactive'
+      WHERE id = $1
+      RETURNING *`;
+
+    const result = await this.databaseService.runQuery(query, [campaignId]);
+    const campaign: Campaign = result.rows[0];
+
+    return campaign;
+  }
 }

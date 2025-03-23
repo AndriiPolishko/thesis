@@ -13,6 +13,11 @@ interface GetCampaignsParams {
   size: number;
 }
 
+export enum CampaignStatus {
+  Pending = 'pending',
+  Active = 'active',
+  Inactive = 'inactive',
+}
 export const campaignService = {
   createCampaign: async (params: CampaignCreationData) => {
     const campaignCreateUrl = `${baseApiUrl}/campaign/create`
@@ -22,8 +27,10 @@ export const campaignService = {
       goal: campaignDescription,
       urls: splittedLinks,
     });
-    return response.data; // React Query prefers returning data only
+
+    return response.data;
   },
+  // Refetch on activate of any campaign
   getCampaigns: async (params: GetCampaignsParams) => {
     const getCampaignsUrl = `${baseApiUrl}/campaign`
     const { page, size } = params;
@@ -34,7 +41,23 @@ export const campaignService = {
       },
     });
 
-    return response.data; // React Query prefers returning data only
+    return response.data;
+  },
+  getCampaignById: async (campaignId: number) => {
+    const getCampaignByIdUrl = `${baseApiUrl}/campaign/${campaignId}`
+    const response = await axios.get(getCampaignByIdUrl);
+
+    return response.data;
+  },
+  changeCampaignStatus: async (params: { campaignId: number, newStatus: CampaignStatus }) => {
+    const { campaignId, newStatus } = params;
+    const activateCampaignUrl = `${baseApiUrl}/campaign/change-status/${campaignId}`
+    const response = await axios.patch(activateCampaignUrl, {
+      newStatus
+    });
+
+    // Returns the status 
+    return response.data;
   }
 }
 

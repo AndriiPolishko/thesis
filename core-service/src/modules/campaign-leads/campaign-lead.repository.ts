@@ -11,7 +11,7 @@ export class CampaignLeadRepository {
   public async getCampaignLeads(campaignId: string) {
     const query = `
       SELECT cl.*, l.*
-      FROM "campaignLead" cl
+      FROM "campaign_lead" cl
       JOIN "lead" l ON cl.lead_id = l.id
       WHERE cl.campaign_id = $1;
     `;

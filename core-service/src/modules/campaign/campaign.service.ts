@@ -8,6 +8,12 @@ import { Campaign, CampaignCreationResponse, CampaignCreationStatus, CreateCampa
 import { CampaignRepository } from "./campaign.repository";
 import { LinkRepository } from "../link/link.repository";
 
+
+export enum CampaignStatus {
+  Active = 'active',
+  Inactive = 'inactive'
+}
+
 @Injectable()
 export class CampaignService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CampaignService.name);
@@ -81,5 +87,19 @@ export class CampaignService implements OnModuleInit, OnModuleDestroy {
     const totalPages = Math.ceil(totalCampaigns / pageSize);
 
     return totalPages;
+  }
+
+  async getCampaign(campaignId: string): Promise<Campaign> {
+    return this.campaignRepository.getCampaign(campaignId);
+  }
+
+  async changeCampaignStatus(params: { campaignId: string, newStatus: CampaignStatus }): Promise<Campaign> {
+    const { campaignId, newStatus } = params;
+
+    if (newStatus === CampaignStatus.Active) {
+      return this.campaignRepository.activate(campaignId);
+    }
+
+    return this.campaignRepository.deactivate(campaignId);
   }
 }

@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Inject, Post, Query, Request } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Patch, Post, Query, Request } from "@nestjs/common";
 
-import { CampaignService } from "./campaign.service";
+import { CampaignService, CampaignStatus } from "./campaign.service";
 import { Campaign, CampaignCreationResponse, CreateCampaignDto } from "./campaign.dto";
 
 interface GetCampaignsResponse {
@@ -37,5 +37,22 @@ export class CampaignController {
       campaigns,
       totalPages
     };
+  }
+
+  @Get("/:id")
+  async getCampaign(@Request() req): Promise<Campaign> {
+    const campaignId = req.params.id;
+    const campaign = await this.campaignService.getCampaign(campaignId);
+
+    return campaign;
+  }
+
+  @Patch("/change-status/:id")
+  async changeCampaignStatus(@Request() req, @Body() toggleCampaignStatusBody: { newStatus: CampaignStatus }): Promise<Campaign> {
+    const campaignId = req.params.id;
+    const { newStatus } = toggleCampaignStatusBody;
+    const campaign = await this.campaignService.changeCampaignStatus({ campaignId, newStatus });
+
+    return campaign;
   }
 }

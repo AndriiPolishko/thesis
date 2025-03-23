@@ -12,9 +12,9 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 
 import { leadService } from "../../api/leadService";
-import { useMutation } from "@tanstack/react-query";
 
 export function LeadBlock() {
   const { isOpen, onToggle } = useDisclosure({

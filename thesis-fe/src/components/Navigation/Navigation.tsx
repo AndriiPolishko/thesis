@@ -31,6 +31,8 @@ export function Navigation() {
           )
         }
       />
+      <Route path="/campaigns/:id" element={<CampaignDetail />} />
+      <Route path="/campaigns" element={<CampaignTable />} />
       <Route path="/leads/create" element={<LeadBlock />} />
       <Route path="/leads" element={<LeadTable />} />
     </Routes>

@@ -1,6 +1,8 @@
-import { useToast } from '@chakra-ui/react'
 import axios from 'axios'
 import React, { useState, createContext, useContext, useEffect } from 'react'
+import { useToast } from '@chakra-ui/react'
+
+import { CenterSpinner } from '../components/Utils/CenterSpinner'
 
 interface AuthContextType {
   isAuthenticated: boolean
@@ -51,7 +53,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+     <CenterSpinner />
+    );
   }
   
   return (

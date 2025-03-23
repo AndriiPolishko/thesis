@@ -7,7 +7,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div>Protected route loading Loading...</div>
   }
 
   if (!isAuthenticated) {

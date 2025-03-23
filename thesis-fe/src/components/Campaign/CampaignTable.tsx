@@ -12,10 +12,12 @@ import {
   Button,
   useToast,
 } from '@chakra-ui/react';
+import { useNavigate } from 'react-router-dom';
+
 import { campaignService } from '../../api/campaignService';
 
 interface Campaign {
-  id: string;
+  id: number;
   name: string;
   goal: string;
   status: 'active' | 'completed' | 'draft';
@@ -25,7 +27,8 @@ interface CampaignTableProps {
   onCampaignSelect: (campaign: Campaign) => void;
 }
 
-export function CampaignTable({ onCampaignSelect }: CampaignTableProps) {
+export function CampaignTable() {
+  const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
@@ -53,7 +56,6 @@ export function CampaignTable({ onCampaignSelect }: CampaignTableProps) {
       });
     }
   };
-
   const getStatusColor = (status: Campaign['status']) => {
     switch (status) {
       case 'active':
@@ -66,6 +68,11 @@ export function CampaignTable({ onCampaignSelect }: CampaignTableProps) {
         return 'gray';
     }
   };
+
+  function onCampaignSelect(campaignId: number) {
+    navigate(`/campaigns/${campaignId}`)
+  }
+  
 
   return (
     <Box borderWidth="1px" borderRadius="lg" bg="white" overflow="hidden" p={4}>
@@ -92,7 +99,7 @@ export function CampaignTable({ onCampaignSelect }: CampaignTableProps) {
               key={campaign.id}
               cursor="pointer"
               _hover={{ bg: 'gray.50' }}
-              onClick={() => onCampaignSelect(campaign)}
+              onClick={() => onCampaignSelect(campaign.id)}
             >
               <Td>{campaign.name}</Td>
               <Td>{campaign.goal}</Td>

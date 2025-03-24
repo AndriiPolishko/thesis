@@ -8,7 +8,7 @@ import { DatabaseModule } from '../database/database.module';
 @Module({
   imports: [DatabaseModule],
   controllers: [LeadController],
-  exports: [LeadService],
+  exports: [LeadService, LeadRepository],
   providers: [LeadService, LeadRepository]
 })
 export class LeadModule {}

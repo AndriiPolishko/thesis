@@ -28,6 +28,7 @@
     "axios": "^1.7.9",
     "dotenv": "^16.4.7",
     "express-session": "^1.18.1",
+    "googleapis": "^148.0.0",
     "kafkajs": "^2.2.4",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",

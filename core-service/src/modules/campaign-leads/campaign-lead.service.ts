@@ -8,7 +8,7 @@ export class CampaignLeadService {
     private readonly campaignLeadRepository: CampaignLeadRepository
   ) {}
 
-  public async getCampaignLeads(campaignId: string) {
+  public async getCampaignLeads(campaignId: number) {
     const campaignLeads = await this.campaignLeadRepository.getCampaignLeads(campaignId);
 
     return campaignLeads;

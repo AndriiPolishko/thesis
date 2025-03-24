@@ -82,13 +82,11 @@ async def process_scraping(urls: list[str], campaign_id: int):
                     "chunk": chunk,
                     "campaign_id": campaign_id,
                 }
-                
 
-                
                 await kafka_producer.send_message(message)
         except Exception as e:
             logging.error(f"Error scraping {url}: {str(e)}")
-            await database.update_link(link_id, None, LinkStatusEnum.Failed, datetime.now())
+            await database.update_link(link_id, None, LinkStatusEnum.Error, datetime.now())
 
 @app.post("/scrape")
 async def scrape_urls(scraping_request: ScrapingRequest, background_tasks: BackgroundTasks):

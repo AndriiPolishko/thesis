@@ -57,5 +57,20 @@ class Database:
         except Exception as e:
             print(e)
 
+    async def update_campaign_status(self, campaign_id, status):
+        """Updates the campaign status in the database."""
+        try:
+            await self.connect()  # Ensure connection is available
+            query = """
+            UPDATE campaign 
+            SET status = %s 
+            WHERE id = %s;
+            """
+            async with self.conn.cursor() as cur:
+                await cur.execute(query, (status, campaign_id))
+                await self.conn.commit()
+        except Exception as e:
+            print(e)
+
 # Create a global instance
 database = Database()

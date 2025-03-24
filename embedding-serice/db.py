@@ -42,7 +42,7 @@ class Database:
         if self.conn is None:
             await self.connect()
             
-        query = "UPDATE campaign SET status = 'Ready' WHERE id = %s"
+        query = "UPDATE campaign SET status = 'inactive' WHERE id = %s"
         
         await self.conn.execute(query, (campaign_id,))
         

@@ -1,62 +1,46 @@
 import axios from "axios";
-import { Inject, Injectable, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
-import { Kafka } from 'kafkajs';
+import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from '@nestjs/config';
 import { Logger } from "@nestjs/common";
 
 import { Campaign, CampaignCreationResponse, CampaignCreationStatus, CreateCampaignDto } from "./campaign.dto";
 import { CampaignRepository } from "./campaign.repository";
-import { LinkRepository } from "../link/link.repository";
-
+import { CampaignLeadRepository } from "../campaign-leads/campaign-lead.repository";
+import { QueueService } from "../queue/queue.service";
 
 export enum CampaignStatus {
   Active = 'active',
   Inactive = 'inactive'
-}
+};
+
+interface EmailGenerationQueueObject {
+  campaign_id: number;
+  lead_id: number;
+  first_name: string;
+  last_name: string;
+  campaign_goal: string;
+};
 
 @Injectable()
-export class CampaignService implements OnModuleInit, OnModuleDestroy {
+export class CampaignService {
   private readonly logger = new Logger(CampaignService.name);
 
-  private readonly kafka;
-
-  private readonly urlProducer;
-
-  private readonly brokerAddress;
+  private readonly emailGenerationTopicName = 'email-generation';
 
   constructor(
     private configService: ConfigService,
     @Inject(CampaignRepository) private readonly campaignRepository: CampaignRepository,
-    @Inject(LinkRepository) private readonly linkRepository: LinkRepository
-  ) {
-    this.brokerAddress = this.configService.get<string>('KAFKA_BROKER_ADDRESS');
-
-    this.kafka = new Kafka({
-      clientId: 'nextjs-producer',
-      brokers: [this.brokerAddress],
-    });
-
-    this.urlProducer = this.kafka.producer();
-  }
-
-  async onModuleInit() {
-    await this.urlProducer.connect();
-
-    console.log("Kafka Producer Connected");
-  }
-
-  async onModuleDestroy() {
-    await this.urlProducer.disconnect();
-
-    console.log("Kafka Producer Disconnected");
-  }
+    @Inject(CampaignLeadRepository) private readonly campaignLeadRepository: CampaignLeadRepository,
+    @Inject(QueueService) private readonly queueService: QueueService
+  ) { }
 
   async createCampaign(createCampaignDto: CreateCampaignDto): Promise<CampaignCreationResponse> {
     try {
       const { name, goal, urls } = createCampaignDto;
       const saveCampaignToCoreDbRes = await this.campaignRepository.createCampaign({ name, goal });
       const campaignId = saveCampaignToCoreDbRes.id;
-      const scrappingServiceResponse = await axios.post('http://127.0.0.1:5003/scrape', {
+      const scrappingServiceAddress = this.configService.get<string>('SCRAPPING_SERVICE_ADDRESS');
+      const scrappingServiceResponse = await axios.post(scrappingServiceAddress, {
         urls,
         campaign_id: campaignId
       });
@@ -89,15 +73,35 @@ export class CampaignService implements OnModuleInit, OnModuleDestroy {
     return totalPages;
   }
 
-  async getCampaign(campaignId: string): Promise<Campaign> {
+  async getCampaign(campaignId: number): Promise<Campaign> {
     return this.campaignRepository.getCampaign(campaignId);
   }
 
-  async changeCampaignStatus(params: { campaignId: string, newStatus: CampaignStatus }): Promise<Campaign> {
+  async moveCampaignLeadsToGenerationQueue(campaignId: number): Promise<void> {
+    const campaignLeads = await this.campaignLeadRepository.getCampaignLeads(campaignId);
+
+    for (const campaignLead of campaignLeads) {
+      const emailGenerationQueueObject: EmailGenerationQueueObject = {
+        campaign_id: campaignId,
+        lead_id: campaignLead.lead_id,
+        first_name: campaignLead.first_name,
+        last_name: campaignLead.last_name,
+        campaign_goal: campaignLead.campaign_goal
+      };
+
+      await this.queueService.send(this.emailGenerationTopicName, emailGenerationQueueObject);
+    }
+  }
+
+  async changeCampaignStatus(params: { campaignId: number, newStatus: CampaignStatus }): Promise<Campaign> {
     const { campaignId, newStatus } = params;
 
     if (newStatus === CampaignStatus.Active) {
-      return this.campaignRepository.activate(campaignId);
+      const activeCampaign = await this.campaignRepository.activate(campaignId);
+
+      await this.moveCampaignLeadsToGenerationQueue(campaignId);
+
+      return activeCampaign;
     }
 
     return this.campaignRepository.deactivate(campaignId);

@@ -22,7 +22,7 @@ export class AuthController {
 
     this.logger.log(`Redirecting user: ${user.id}`);
 
-    const feUrl = process.env.FE_URL || 'http://localhost:5173//campaigns/create';
+    const feUrl = process.env.FE_URL || 'http://localhost:5173/campaigns/create';
 
     res.redirect(feUrl);
   }

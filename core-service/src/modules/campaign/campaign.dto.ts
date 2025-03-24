@@ -2,6 +2,7 @@ export interface Campaign {
   id: string;
   name: string;
   goal: string;
+  owner_id: string;
 }
 
 export interface CreateCampaignDto {

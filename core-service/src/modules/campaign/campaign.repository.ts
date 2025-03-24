@@ -58,7 +58,7 @@ export class CampaignRepository {
     return totalCampaigns;
   }
 
-  async getCampaign(campaignId: string) {
+  async getCampaign(campaignId: number) {
     const query = `
       SELECT * FROM campaign
       WHERE id = $1`;
@@ -69,7 +69,7 @@ export class CampaignRepository {
     return campaign;
   }
 
-  async activate(campaignId: string) {
+  async activate(campaignId: number) {
     const query = `
       UPDATE campaign
       SET status = 'active'
@@ -82,12 +82,23 @@ export class CampaignRepository {
     return campaign;
   }
 
-  async deactivate(campaignId: string) {
+  async deactivate(campaignId: number) {
     const query = `
       UPDATE campaign
       SET status = 'inactive'
       WHERE id = $1
       RETURNING *`;
+
+    const result = await this.databaseService.runQuery(query, [campaignId]);
+    const campaign: Campaign = result.rows[0];
+
+    return campaign;
+  }
+
+  async findById(campaignId: number | string): Promise<Campaign> {
+    const query = `
+      SELECT * FROM campaign
+      WHERE id = $1`;
 
     const result = await this.databaseService.runQuery(query, [campaignId]);
     const campaign: Campaign = result.rows[0];

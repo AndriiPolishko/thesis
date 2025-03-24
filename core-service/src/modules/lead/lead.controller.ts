@@ -1,19 +1,15 @@
 import { Body, Controller, Get, Post, Query } from "@nestjs/common";
 
 import { LeadService } from "./lead.service";
-
+import { Lead
+  
+ } from "./lead.types";
 interface CreateLeadBody {
   email: string;
   firstName?: string;
   lastName?: string;
 }
 
-interface Lead {
-  fist_name: string;
-  last_name: string;
-  email: string;
-  status: string;
-}
 
 @Controller("lead")
 export class LeadController {

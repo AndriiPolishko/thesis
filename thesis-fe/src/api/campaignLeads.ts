@@ -4,7 +4,7 @@ import { baseApiUrl } from "../globals";
 
 interface CampaignLeadCreationData {
   campaignId: number;
-  leadId: number;
+  leadIds: number[];
 }
 
 export const campaignLeadsService = {
@@ -14,13 +14,14 @@ export const campaignLeadsService = {
 
     return response.data;
   },
-  createCampaignLead: async (params: CampaignLeadCreationData) => {
-    const campaignLeadCreateUrl = `${baseApiUrl}/campaign-lead/lead`;
-    const { campaignId, leadId } = params;
+  addCampaignLeads: async (params: CampaignLeadCreationData) => {
+    const campaignLeadCreateUrl = `${baseApiUrl}/campaign-lead`;
+    const { campaignId, leadIds } = params;
     const response = await axios.post(campaignLeadCreateUrl, {
       campaignId,
-      leadId
-    });
+      leadIds }, 
+      { withCredentials: true }
+    );
 
     return response.data
   }

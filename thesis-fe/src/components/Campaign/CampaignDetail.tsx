@@ -7,7 +7,8 @@ import {
   VStack,
   HStack,
   Badge,
-  Divider
+  Divider,
+  useToast
 } from '@chakra-ui/react'
 import { ArrowLeft } from 'lucide-react'
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -18,6 +19,8 @@ import { CampaignEventsTable } from './tables/CampaignEventsTable'
 import { campaignService } from '../../api/campaignService'
 import { CenterSpinner } from '../Utils/CenterSpinner';
 import { CampaignStatus } from '../../api/campaignService';
+import { Lead } from '../Lead/lead.types';
+import { campaignLeadsService } from '../../api/campaignLeads';
 
 type Campaign = {
   id: number
@@ -34,9 +37,7 @@ export function CampaignDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
   const campaignId = Number(id);
-  const handleLeadsAdd = (selectedLeads: string[]) => {
-    // Handle adding leads to the campaign
-  }
+  const toast = useToast();
   const {
     data: campaign,
     isLoading,
@@ -66,6 +67,35 @@ export function CampaignDetail() {
       // toast({ title: 'Failed to update status', status: 'error' });
     }
   });
+
+  const addCampaignLeadMutation = useMutation({
+    mutationFn: campaignLeadsService.addCampaignLeads,
+    onSuccess: () => {
+      toast({
+        title: "Campaign Created",
+        description: "Your campaign has been successfully created.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right"
+      });
+
+    },
+    onError: (error) => {
+      toast({
+        title: "Campaign Creation Failed",
+        description: error?.message || "Something went wrong. Please try again.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right"
+      });
+    },
+  });
+  async function handleLeadsAdd(leads: Lead[]) {
+    const leadIds = leads.map((lead) => lead.id);
+    addCampaignLeadMutation.mutate({ campaignId, leadIds });
+  }
 
   function chooseStatusColor(status: CampaignStatus) {
     switch (status) {

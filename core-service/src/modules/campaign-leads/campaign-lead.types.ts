@@ -22,3 +22,14 @@ export interface CampaignLeadJoinLead extends CampaignLead, Omit<Lead, 'id' | 'c
   lead_updated_at: Date;
   campaign_goal: string;
 }
+
+export interface AddCampaignLeadsBody {
+  campaignId: number;
+  leadIds: number[];
+}
+
+export interface AddCampaignLeadsParams {
+  userId: number;
+  campaignId: number;
+  leadIds: number[];
+}

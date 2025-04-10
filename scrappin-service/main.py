@@ -23,12 +23,14 @@ class ScrapingRequest(pydantic.BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handles startup and shutdown tasks."""
+    logging.info("Starting up...")
+    
     await database.connect()
     await kafka_producer.start()
     
     yield
     
-    logging.info("Shutting down Kafka producer...")
+    logging.info("Shutting down...")
     await kafka_producer.stop()
     await database.close()
 
@@ -49,9 +51,15 @@ async def read_root():
 
 async def process_scraping(urls: list[str], campaign_id: int):
     """Background task to scrape URLs and send data to Kafka."""
+
     for url in urls:
         url = add_protocol_if_missing(url)
+        
+        logging.info(f"Processing URL: {url}")
+        
         link_id = await database.save_link(url, campaign_id)
+        
+        logging.info(f"Successfully saved {url} by the link with id {link_id}")
 
         try:
             page_text = scrape_url_and_get_text(url)

@@ -1,7 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
 
 import { DatabaseService } from '../database/database.service';
-import { Campaign, CampaignCreationResponse, CampaignCreationStatus, CreateCampaignEntity } from "./campaign.dto";
+import { CampaignCreationResponse, CampaignCreationStatus, CreateCampaignEntity } from "./campaign.dto";
+import { Campaign } from "./campaign.types";
 
 // TODO: rename methods according to the repository pattern
 @Injectable()
@@ -12,11 +13,11 @@ export class CampaignRepository {
 
   async createCampaign(createCampaignDto: CreateCampaignEntity): Promise<CampaignCreationResponse> {
     try {
-      const { name, goal } = createCampaignDto;
+      const { name, goal, owner_id } = createCampaignDto;
       const query = `
-        INSERT INTO campaign (name, goal) VALUES ($1, $2) RETURNING id`;
+        INSERT INTO campaign (name, goal, owner_id) VALUES ($1, $2, $3) RETURNING id`;
 
-      const result = await this.databaseService.runQuery(query, [name, goal]);
+      const result = await this.databaseService.runQuery(query, [name, goal, owner_id]);
       const campaignId = Number(result.rows[0].id);
 
       return {

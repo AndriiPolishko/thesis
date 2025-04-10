@@ -1,23 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 
 import { DatabaseService } from "../database/database.service";
+import { CreateIntegrationTokenEntity, IntegrationToken } from "./integration-token.types";
 
-interface CreateIntegrationTokenEntity {
-  userId: number;
-  integrationToken: string;
-  refreshToken: string;
-  expiresAt: Date;
-}
 
-interface IntegrationToken {
-  id: number;
-  user_id: number;
-  access_token: string;
-  refresh_token: string;
-  expires_at?: Date;
-  created_at: Date;
-  updated_at: Date;
-}
 
 @Injectable()
 export class IntegrationTokenRepository {
@@ -26,17 +12,17 @@ export class IntegrationTokenRepository {
   ) {}
 
   async createOne(createIntegrationTokenEntity: CreateIntegrationTokenEntity) {
-    const { userId, integrationToken, refreshToken, expiresAt } = createIntegrationTokenEntity;
+    const { userId, access_token, refreshToken, expiresAt, email, webhookExpiresAt, history_id } = createIntegrationTokenEntity;
     const query = `
-      INSERT INTO integration_token (user_id, access_token, refresh_token, expires_at) VALUES ($1, $2, $3, $4) RETURNING id`;
+      INSERT INTO integration_token (user_id, access_token, refresh_token, expires_at, email, webhook_expires_at, history_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`;
 
-    const result = await this.databaseService.runQuery(query, [userId, integrationToken, refreshToken, expiresAt]);
-    const integrationTokenId = result.rows[0].id;
+    const result = await this.databaseService.runQuery(query, [userId, access_token, refreshToken, expiresAt, email, webhookExpiresAt, history_id]);
+    const integrationToken = result.rows[0];
 
-    return integrationTokenId; 
+    return integrationToken; 
   }
 
-  async findByUserId(userId: number | string) {
+  async findByUserId(userId: number | string): Promise<IntegrationToken | null> {
     const query = `
       SELECT * FROM integration_token WHERE user_id = $1`;
 
@@ -54,5 +40,25 @@ export class IntegrationTokenRepository {
     const integrationToken = result.rows[0];
 
     return integrationToken
+  }
+
+  async findByEmail(email: string): Promise<IntegrationToken> {
+    const query = `
+      SELECT * FROM integration_token WHERE email = $1`;
+
+    const result = await this.databaseService.runQuery(query, [email]);
+    const integrationToken = result.rows[0];
+
+    return integrationToken;
+  }
+
+  async updateAccessTokenAndExpiration(integrationTokenId: number, accessToken: string, expiresAt: Date): Promise<IntegrationToken> {
+    const query = `
+      UPDATE integration_token SET access_token = $2, expires_at = $3 WHERE id = $1 RETURNING *`;
+
+    const result = await this.databaseService.runQuery(query, [integrationTokenId, accessToken, expiresAt]);
+    const updatedIntegrationToken = result.rows[0];
+
+    return updatedIntegrationToken;
   }
 }

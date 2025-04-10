@@ -1,5 +1,9 @@
 import psycopg as pg
+import logging
+
 from config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
+
+logging.basicConfig(level=logging.INFO)
 
 class LinkStatusEnum:
     """Enum for link status."""

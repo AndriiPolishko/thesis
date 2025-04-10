@@ -26,7 +26,7 @@ export const campaignService = {
       name: campaignName,
       goal: campaignDescription,
       urls: splittedLinks,
-    });
+    }, { withCredentials: true });
 
     return response.data;
   },
@@ -35,6 +35,7 @@ export const campaignService = {
     const getCampaignsUrl = `${baseApiUrl}/campaign`
     const { page, size } = params;
     const response = await axios.get(getCampaignsUrl, {
+      withCredentials: true,
       params: {
         page,
         size,
@@ -45,7 +46,7 @@ export const campaignService = {
   },
   getCampaignById: async (campaignId: number) => {
     const getCampaignByIdUrl = `${baseApiUrl}/campaign/${campaignId}`
-    const response = await axios.get(getCampaignByIdUrl);
+    const response = await axios.get(getCampaignByIdUrl, { withCredentials: true });
 
     return response.data;
   },
@@ -54,7 +55,7 @@ export const campaignService = {
     const activateCampaignUrl = `${baseApiUrl}/campaign/change-status/${campaignId}`
     const response = await axios.patch(activateCampaignUrl, {
       newStatus
-    });
+    }, { withCredentials: true });
 
     // Returns the status 
     return response.data;

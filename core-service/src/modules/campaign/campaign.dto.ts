@@ -1,9 +1,4 @@
-export interface Campaign {
-  id: string;
-  name: string;
-  goal: string;
-  owner_id: string;
-}
+
 
 export interface CreateCampaignDto {
   name: string;
@@ -14,6 +9,7 @@ export interface CreateCampaignDto {
 export interface CreateCampaignEntity {
   name: string;
   goal: string;
+  owner_id: number;
 }
 
 export enum CampaignCreationStatus {

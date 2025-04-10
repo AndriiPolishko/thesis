@@ -1,4 +1,4 @@
-
+import axios from 'axios';
 import { Box, Button, VStack, Heading, Text } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -10,9 +10,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 
 export function LoginPage() {
   const handleGoogleLogin = () => {
-    // Implement Google login logic here
-    const loginUrl = 'http://localhost:8001/auth/google/login'
-    window.location.href = loginUrl;
+    window.location.href = 'http://localhost:8001/auth/google/login';
   }
 
   const { isAuthenticated } = useAuth();

@@ -1,7 +1,9 @@
-import { Body, Controller, Get, Inject, Patch, Post, Query, Request } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Patch, Post, Query, Request, UseGuards } from "@nestjs/common";
+import { AuthGuard } from "@nestjs/passport";
 
 import { CampaignService, CampaignStatus } from "./campaign.service";
-import { Campaign, CampaignCreationResponse, CreateCampaignDto } from "./campaign.dto";
+import { CampaignCreationResponse, CreateCampaignDto } from "./campaign.dto";
+import { Campaign } from "./campaign.types";
 
 interface GetCampaignsResponse {
   campaigns: Campaign[];
@@ -15,8 +17,11 @@ export class CampaignController {
   ) {}
 
   @Post('create')
-  async createCampaign(@Body() createCampaignDto: CreateCampaignDto): Promise<CampaignCreationResponse> {
-    const status = await this.campaignService.createCampaign(createCampaignDto);
+  @UseGuards(AuthGuard('jwt'))
+  async createCampaign(@Request() req, @Body() createCampaignDto: CreateCampaignDto): Promise<CampaignCreationResponse> {
+    const userId = req?.user?.id;
+    const { name, goal, urls } = createCampaignDto;
+    const status = await this.campaignService.createCampaign({ name, goal, owner_id: userId, urls });
 
     return status;
   }

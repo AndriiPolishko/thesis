@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Table,
   Thead,
@@ -10,39 +10,47 @@ import {
   Checkbox,
   Button,
   VStack,
+  useToast
 } from '@chakra-ui/react'
-type Lead = {
-  id: string
-  name: string
-  email: string
-}
+
+import { leadService } from '../../../api/leadService'
+import { Lead } from '../../Lead/lead.types'
+
 interface AddLeadsTableProps {
-  onLeadsAdd: (selectedLeads: string[]) => void
+  onLeadsAdd: (selectedLeads: Lead[]) => void
 }
 export function AddLeadsTable({ onLeadsAdd }: AddLeadsTableProps) {
-  const [selectedLeads, setSelectedLeads] = useState<string[]>([])
-  // Temporary data for demonstration
-  const availableLeads: Lead[] = [
-    {
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike@example.com',
-    },
-    {
-      id: '4',
-      name: 'Sarah Wilson',
-      email: 'sarah@example.com',
-    },
-    {
-      id: '5',
-      name: 'Tom Brown',
-      email: 'tom@example.com',
-    },
-  ]
+  const [selectedLeads, setSelectedLeads] = useState<Lead[]>([])
+  const [leads, setLeads] = useState<Lead[]>([])
+  const toast = useToast();
+  
   const handleSubmit = () => {
     onLeadsAdd(selectedLeads)
     setSelectedLeads([])
   }
+
+  const fetchLeads = async () => {
+    try {
+      // Pass 0 for both page and size to get all leads
+      const data = await leadService.getLeads({ page: 0, size: 0 });
+
+      setLeads(data.leads);
+    } catch (error: any) {
+      toast({
+        title: 'Failed to load leads.',
+        description: error?.message || 'Something went wrong while fetching leads.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        position: 'top-right',
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
   return (
     <VStack align="stretch" spacing={4}>
       <Box borderWidth="1px" borderRadius="lg" bg="white" overflow="hidden">
@@ -51,40 +59,40 @@ export function AddLeadsTable({ onLeadsAdd }: AddLeadsTableProps) {
             <Tr>
               <Th width="40px">
                 <Checkbox
-                  isChecked={selectedLeads.length === availableLeads.length}
+                  isChecked={selectedLeads.length === leads.length}
                   isIndeterminate={
                     selectedLeads.length > 0 &&
-                    selectedLeads.length < availableLeads.length
+                    selectedLeads.length < leads.length
                   }
                   onChange={(e) =>
                     setSelectedLeads(
-                      e.target.checked
-                        ? availableLeads.map((lead) => lead.id)
-                        : [],
+                      e.target.checked ? leads : []
                     )
                   }
                 />
               </Th>
-              <Th>Name</Th>
+              <Th>First Name</Th>
+              <Th>Last Name</Th>
               <Th>Email</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {availableLeads.map((lead) => (
+            {leads.map((lead) => (
               <Tr key={lead.id}>
                 <Td>
                   <Checkbox
-                    isChecked={selectedLeads.includes(lead.id)}
+                    isChecked={selectedLeads.some((l) => l.id === lead.id)}
                     onChange={(e) =>
                       setSelectedLeads(
                         e.target.checked
-                          ? [...selectedLeads, lead.id]
-                          : selectedLeads.filter((id) => id !== lead.id),
+                          ? [...selectedLeads, lead]
+                          : selectedLeads.filter((l) => l.id !== lead.id)
                       )
                     }
                   />
                 </Td>
-                <Td>{lead.name}</Td>
+                <Td>{lead.first_name}</Td>
+                <Td>{lead.last_name}</Td>
                 <Td>{lead.email}</Td>
               </Tr>
             ))}

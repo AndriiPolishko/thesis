@@ -29,12 +29,13 @@ export const leadService = {
     const getLeadsUrl = `${baseApiUrl}/lead`
     const { page, size } = params;
     const response = await axios.get(getLeadsUrl, {
+      withCredentials: true,
       params: {
         page,
         size,
       },
     });
 
-    return response.data; // React Query prefers returning data only
+    return response.data;
   }
 }

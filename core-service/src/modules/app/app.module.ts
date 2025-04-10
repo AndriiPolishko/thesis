@@ -9,6 +9,7 @@ import { CampaignModule } from '../campaign/campaign.module';
 import { CampaignLeadModule } from '../campaign-leads/campaign-lead.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { MessageModule } from '../message/message.module';
+import { GmailModule } from '../gmail/gmail.module';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { MessageModule } from '../message/message.module';
     CampaignLeadModule,
     AuthModule,
     MessageModule,
-    PassportModule.register({ session: true })
+    PassportModule.register({ session: false }),
+    GmailModule
   ],
   controllers: [AppController],
   providers: [AppService],

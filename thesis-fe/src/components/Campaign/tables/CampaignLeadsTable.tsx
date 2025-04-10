@@ -39,35 +39,6 @@ export function CampaignLeadsTable({ campaignId }: CampaignLeadsTableProps) {
     }
   };
 
-  const addCampaignLeadMutation = useMutation({
-    mutationFn: campaignLeadsService.createCampaignLead,
-    onSuccess: () => {
-      toast({
-        title: "Campaign Created",
-        description: "Your campaign has been successfully created.",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-        position: "top-right"
-      });
-
-    },
-    onError: (error) => {
-      toast({
-        title: "Campaign Creation Failed",
-        description: error?.message || "Something went wrong. Please try again.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "top-right"
-      });
-    },
-  });
-
-  // const handleAddLead = async () => {
-  //   addCampaignLeadMutation.mutate({ campaignId, leadId: Number(newLeadId) });
-  // };
-
   return (
     <Box borderWidth="1px" borderRadius="lg" bg="white" overflow="hidden" p={4}>
       <Table variant="simple" size="sm">

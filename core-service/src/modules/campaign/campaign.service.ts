@@ -34,6 +34,7 @@ interface EmailGenerationQueueObject {
   thread?: string;
   thread_id?: string;
   last_message?: string;
+  message_id?: string;
 };
 
 interface HistoryMessageAddedItem {
@@ -148,14 +149,15 @@ export class CampaignService {
     return this.campaignRepository.deactivate(campaignId);
   }
 
-  public async handleReply(params: { userEmail: string, history_id: string }) {
+  public async handleIncoming(params: { userEmail: string, history_id: string }) {
     const { userEmail, history_id } = params;
 
-    this.logger.log(`Received reply for user ${userEmail} with historyId: ${history_id}`);
+    this.logger.log(`Received incoming for user ${userEmail} with historyId: ${history_id}`);
 
     const integrationToken = await this.integrationTokenRepository.findByEmail(userEmail);
-    const { refresh_token, history_id: integrationTokenHistoryId, expires_at } = integrationToken;
+    const { refresh_token, history_id: startHistoryId, expires_at } = integrationToken;
     let access_token = integrationToken.access_token;
+    // TODO: move to the separate function for token refresh
     const shouldRefreshToken = !expires_at || !access_token || new Date(expires_at) < new Date();
 
     if (shouldRefreshToken) {
@@ -168,16 +170,25 @@ export class CampaignService {
       access_token = newAccessToken;
     }
 
-    let historyDetails = await this.getHistoryDetails({ email: userEmail, historyId: history_id, accessToken: access_token });
+    let historyDetails = await this.getHistoryDetails({ email: userEmail, historyId: startHistoryId, accessToken: access_token });
 
     console.log("History details: ", historyDetails);
 
     const newMessageIds = [];
+
+    // Important: Update the stored history ID even if there are no changes
+    if (historyDetails && historyDetails.historyId) {
+      await this.integrationTokenRepository.updateHistoryId(integrationToken.id, historyDetails.historyId);
+      this.logger.log(`Updated historyId to ${historyDetails.historyId} for user ${userEmail}`);
+    }
+
     if (!historyDetails?.history) {
-      this.logger.log(`No history details found for user ${userEmail} with historyId: ${history_id}`);
+      this.logger.log(`No history details found for user ${userEmail} with historyId: ${history_id}. Skipping...`);
 
       return;
     }
+
+    this.logger.log(`Start processing ${historyDetails?.history.length} history details for user ${userEmail} with historyId: ${history_id}`);
 
     for (const entry of historyDetails?.history) {
       if (entry.messagesAdded) {
@@ -187,7 +198,13 @@ export class CampaignService {
       }
     }
 
-    const messagesDetails = [];
+    if (newMessageIds.length === 0) {
+      this.logger.log(`No new messages found for user ${userEmail} with historyId: ${history_id}. Skipping...`);
+
+      return;
+    }
+
+    this.logger.log(`Found ${newMessageIds.length} new messages for user ${userEmail} with historyId: ${history_id}`);
 
     for (const messageId of newMessageIds) {
       const messageDetails = await this.getMessageDetails({ email: userEmail, messageId, accessToken: access_token });
@@ -196,10 +213,21 @@ export class CampaignService {
 
       // Check that events with thread_id are present in the database
       // We need this check to reply only to the messages that were sent from the app
+      // TODO: NOTE: maybe problem is here
       const existingEvents = await this.eventRepository.getEventByThreadId(messageDetails.threadId);
 
       if (!existingEvents) {
         this.logger.error(`No events found for threadId ${messageDetails.threadId}. Skipping message.`);
+
+        continue;
+      }
+
+      const payload = messageDetails.payload;
+      const headers = payload.headers;
+      const from = this.getHeader(headers, 'From');
+
+      if (from.includes(userEmail)) {
+        this.logger.log(`Skipping self-sent message from ${from}`);
 
         continue;
       }
@@ -209,9 +237,8 @@ export class CampaignService {
       const relatedCampaign = await this.campaignRepository.getCampaign(campaign_id);
       const campaignOwner = relatedCampaign.owner_id;
       const relatedLead = await this.leadRepository.findById({leadId: lead_id, userId: campaignOwner});
+      const threadId = messageDetails.threadId;
 
-      const payload = messageDetails.payload;
-      const headers = payload.headers;
       const body = this.extractBodyFromMessage(messageDetails);
       const replyData = {
         from: this.getHeader(headers, 'From'),
@@ -219,12 +246,13 @@ export class CampaignService {
         subject: this.getHeader(headers, 'Subject'),
         date: this.getHeader(headers, 'Date'),
         messageId: messageDetails.id,
-        threadId: messageDetails.threadId,
+        threadId,
         body
       };
       // TODO: save replyData to DB
       // FIXME: get the actual last message and not the whole thread
       const last_message = body;
+      const messageIdHeader = headers.find(h => h.name.toLowerCase() === 'message-id')?.value;
 
       // Push data for the reply generation to the queue
       const replyGenerationQueueObject: EmailGenerationQueueObject = {
@@ -234,8 +262,10 @@ export class CampaignService {
         last_name: relatedLead.last_name,
         campaign_goal: relatedCampaign.goal,
         thread: body,
+        thread_id: threadId,
         type: EmailGenerationQueueObjectType.Reply,
-        last_message
+        last_message,
+        message_id: messageIdHeader
       };
 
       await this.queueService.send(this.emailGenerationTopicName, replyGenerationQueueObject);
@@ -246,29 +276,34 @@ export class CampaignService {
   }
 
   private extractBodyFromMessage(message: any, preferHtml = false): string {
-    const parts = message.payload?.parts || [];
+    const payload = message.payload;
   
+    // First, check if the top-level body has content (no parts)
+    if (payload.body?.data) {
+      const decoded = this.decodeBase64Url(payload.body.data);
+      console.log("Decoded message (top-level):", decoded);
+      return decoded;
+    }
+  
+    const parts = payload.parts || [];
     if (!parts || parts.length === 0) return '';
   
     const targetMime = preferHtml ? 'text/html' : 'text/plain';
   
+    // Try to find preferred MIME type
     for (const part of parts) {
-      if (part.mimeType === targetMime && part.body && part.body.data) {
+      if (part.mimeType === targetMime && part.body?.data) {
         const decoded = this.decodeBase64Url(part.body.data);
-
-        console.log("Decoded message: ", decoded);
-
+        console.log("Decoded message (preferred MIME):", decoded);
         return decoded;
       }
     }
   
-    // fallback: try any part with data
+    // Fallback: any part with data
     for (const part of parts) {
-      if (part.body && part.body.data) {
+      if (part.body?.data) {
         const decoded = this.decodeBase64Url(part.body.data);
-
-        console.log("Decoded message(2): ", decoded);
-
+        console.log("Decoded message (fallback part):", decoded);
         return decoded;
       }
     }

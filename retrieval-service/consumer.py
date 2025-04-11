@@ -11,14 +11,15 @@ from producer import email_producer
 
 # Interface for a received email generation message 
 class EmailGenerationMessage(BaseModel):
-  campaign_id: str
-  lead_id: str
+  campaign_id: int
+  lead_id: int
   campaign_goal: str
   first_name: str
   last_name: str
   thread_id: Optional[str] = None
   thread: Optional[str] = None
   last_message: Optional[str] = None
+  message_id: Optional[str] = None
 
 class EmailCreationConsumer():
   def __init__(self):
@@ -35,7 +36,7 @@ class EmailCreationConsumer():
       EMAIL_GENERATION_TOPIC,
       bootstrap_servers=KAFKA_BROKER,
       group_id=KAFKA_GROUP_ID,
-      auto_offset_reset="earliest"
+      auto_offset_reset="latest"
     )
     self.is_running = True
     
@@ -99,14 +100,16 @@ class EmailCreationConsumer():
             message_str = message.value.decode()
             print(f"Received message: {message.value.decode()}")
             try:
-              message_obj = EmailGenerationMessage.model_validate_json(message_str) # json.loads(message_str)
+              message_obj = EmailGenerationMessage.parse_raw(message_str)
+              # json.loads(message_str)
               thread_id = message_obj.thread_id
+              thread = message_obj.thread
 
               # In case we received thread id, it means we need to generated a reply
-              if thread_id:
-                self.handle_reply(message_obj)
-              
-              self.handle_outgoing(message_obj)
+              if thread_id or thread:
+                await self.handle_reply(message_obj)
+              else:
+                await self.handle_outgoing(message_obj)
 
             except Exception as e:
               logging.error(f"Error parsing message: {e}")
@@ -159,6 +162,7 @@ class EmailCreationConsumer():
     first_name = message.first_name
     last_name = message.last_name
     last_message = message.last_message
+    message_id = message.message_id
     # TODO: Retrieve info relevant to the last message from the vector db
     retrieved_info = "This is some retrieved info"
     # Generated reply email
@@ -168,6 +172,7 @@ class EmailCreationConsumer():
       'campaign_id': campaign_id,
       'lead_id': lead_id,
       'thread_id': thread_id,
+      'message_id': message_id,
       'subject': "Re: Let's connect!",
       'body': generated_reply
     }

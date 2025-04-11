@@ -1,6 +1,7 @@
 export enum EventType {
   Outgoing = 'outgoing',
   Incoming = 'incoming',
+  Reply = 'reply',
   Closed = 'closed',
   Booked = 'booked',
 }

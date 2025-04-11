@@ -2,9 +2,11 @@ import axios from 'axios';
 import { Inject, Logger } from '@nestjs/common';
 import { Injectable } from "@nestjs/common";
 import { gmail_v1, google } from 'googleapis';
+
 import { SendEmailMessagePayload } from '../message.service';
 import { EventRepository } from 'src/modules/event/event.repository';
 import { EventType } from 'src/modules/event/event.types';
+import { IntegrationTokenRepository } from 'src/modules/integrationToken/integration-token.repository';
 
 interface SendEmailParams {
   access_token: string;
@@ -12,6 +14,7 @@ interface SendEmailParams {
   payload: SendEmailMessagePayload;
   from_email: string;
   campaignLeadId: number;
+  integrationTokenId: number;
 }
 
 interface SendOutgoingParams {
@@ -22,6 +25,7 @@ interface SendOutgoingParams {
   campaignLeadId: number;
   lead_id: number;
   campaign_id: number;
+  integrationTokenId: number;
   // TODO: move it up
   gmail: gmail_v1.Gmail;
 }
@@ -36,6 +40,7 @@ interface SendReplyParams {
   campaignLeadId: number;
   lead_id: number;
   campaign_id: number;
+  integrationTokenId: number;
   gmail: gmail_v1.Gmail;
 }
 
@@ -45,6 +50,7 @@ export class GmailClientUtil {
 
   constructor(
     @Inject(EventRepository) private readonly eventRepository: EventRepository,
+    @Inject(IntegrationTokenRepository) private readonly integrationTokenRepository: IntegrationTokenRepository,
   ){}
 
   // TODO: move it out of this class
@@ -74,8 +80,8 @@ export class GmailClientUtil {
   }
 
   async sendEmail(params: SendEmailParams) {
-    const { access_token, refresh_token, payload, from_email, campaignLeadId } = params;
-    const { to_email, subject, body, thread_id, campaign_id, lead_id } = payload;
+    const { access_token, refresh_token, payload, from_email, campaignLeadId, integrationTokenId } = params;
+    const { to_email, subject, body, thread_id, campaign_id, lead_id, message_id } = payload;
 
     try {
     const oauth2Client = new google.auth.OAuth2();
@@ -90,29 +96,33 @@ export class GmailClientUtil {
       this.logger.log(`Found thread_id ${thread_id} in payload. Sending reply to ${to_email} from ${from_email}`);
 
       await this.sendReply({
-        to: to_email,
+        // TODO: remove after testing
+        to: to_email || 'andrii.polishko@ucu.edu.ua',
         subject,
         body,
         thread_id,
-        message_id: thread_id,
+        message_id: message_id,
         from_email,
         gmail,
         campaignLeadId,
         campaign_id,
-        lead_id
+        lead_id,
+        integrationTokenId
       });
+
+      return;
     }
 
     this.logger.log(`Sending outgoing email to ${to_email} from ${from_email}`);
 
-    await this.sendOutgoing({ to: to_email, subject, body, gmail, from_email, campaignLeadId, campaign_id, lead_id });
+    await this.sendOutgoing({ to: to_email || 'andrii.polishko@ucu.edu.ua', subject, body, gmail, from_email, campaignLeadId, campaign_id, lead_id, integrationTokenId });
     } catch (error) {
       this.logger.error('Error sending email', { error });
     }
   }
 
   async sendOutgoing(params: SendOutgoingParams) {
-    const { to, subject, body, gmail, from_email, campaignLeadId, campaign_id, lead_id } = params;
+    const { to, subject, body, gmail, from_email, campaignLeadId, campaign_id, lead_id, integrationTokenId } = params;
 
     try {
       const encodedMessage = Buffer.from([
@@ -135,6 +145,20 @@ export class GmailClientUtil {
       const thread_id = response.data.threadId;
       const message_id = response.data.id;
 
+      await this.eventRepository.createEvent({
+        from: from_email,
+        to,
+        type: EventType.Outgoing,
+        body,
+        subject,
+        thread_id,
+        lead_id,
+        campaign_id,
+        campaign_lead_id: campaignLeadId,
+        message_id
+      });
+
+      // Save event to the database
       this.logger.log(`Saving event for outgoing email to ${to} from ${from_email}`, {
         thread_id,
         message_id,
@@ -144,8 +168,7 @@ export class GmailClientUtil {
         subject,
         body
       });
-
-      this.eventRepository.createEvent({ from: from_email, to, type: EventType.Outgoing, body, subject, thread_id, lead_id, campaign_id, campaign_lead_id: campaignLeadId, message_id });
+      await this.eventRepository.createEvent({ from: from_email, to, type: EventType.Outgoing, body, subject, thread_id, lead_id, campaign_id, campaign_lead_id: campaignLeadId, message_id });
     }
     catch (error) {
       this.logger.error('Error sending outgoing message', { error });
@@ -160,8 +183,8 @@ export class GmailClientUtil {
         `To: ${to}`,
         `Subject: ${subject}`,
         'Content-Type: text/plain; charset="UTF-8"',
-        `In-Reply-To: <${message_id}>`,
-        `References: <${message_id}>`
+        `In-Reply-To: ${message_id}`,
+        `References: ${message_id}`
       ];
       const rawMessage = [
         ...headers,
@@ -181,6 +204,21 @@ export class GmailClientUtil {
       await gmail.users.messages.send({
         userId: 'me',
         requestBody: payload,
+      });
+
+      this.logger.log(`Reply sent to ${to} with thread_id ${thread_id} and message_id ${message_id}`);
+
+      await this.eventRepository.createEvent({
+        from: params.from_email,
+        to,
+        type: EventType.Reply,
+        body,
+        subject,
+        thread_id,
+        lead_id: params.lead_id,
+        campaign_id: params.campaign_id,
+        campaign_lead_id: params.campaignLeadId,
+        message_id
       });
     } catch (error) {
       this.logger.error('Error sending reply', { error });

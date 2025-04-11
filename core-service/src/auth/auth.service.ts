@@ -46,13 +46,8 @@ export class AuthService {
   async registerUser(createUserEntity: CreateUserEntity): Promise<{ user }> {
     try {
       const { accessToken, refreshToken, email } = createUserEntity;
-      const {user: existingUser} = await this.userRepository.findOneByEmail(email);
 
-      if (existingUser) {
-        // TODO: add update 
-  
-        return { user: existingUser };
-      }
+
 
       // TODO: Somehow handle for existing user
       const oauth2Client = new google.auth.OAuth2();
@@ -73,6 +68,20 @@ export class AuthService {
       const { data: watchResponseData } = watchResponse;
       const { historyId: history_id, expiration: webhookExpirationTimestamp } = watchResponseData;
       const webhookExpiresAt = new Date(Number(webhookExpirationTimestamp));
+      const {user: existingUser} = await this.userRepository.findOneByEmail(email);
+      if (existingUser) {
+        // Check if integration token already exists
+        const existingIntegrationToken = await this.integrationTokenRepository.findByEmail(email);
+        // TODO: add update integration token
+        if (!existingIntegrationToken) {
+          this.logger.log(`Creating new integration token for user ${existingUser.id} with email ${email}`);
+  
+          await this.registerIntegrationToken(existingUser.id, accessToken, refreshToken, email, webhookExpiresAt, history_id);
+        }
+
+        return { user: existingUser };
+      }
+
       const newUser = await this.userRepository.createOne(createUserEntity);
       
       // Check if integration token already exists
@@ -83,9 +92,7 @@ export class AuthService {
 
         await this.registerIntegrationToken(newUser.user.id, accessToken, refreshToken, email, webhookExpiresAt, history_id);
       }
-      // TODO: add update integration token
 
-      
       return { user: newUser };
     } catch (error) {
       console.error('Error registering user:', error);

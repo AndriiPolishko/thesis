@@ -61,4 +61,14 @@ export class IntegrationTokenRepository {
 
     return updatedIntegrationToken;
   }
+
+  async updateHistoryId(integrationTokenId: number, historyId: string): Promise<IntegrationToken> {
+    const query = `
+      UPDATE integration_token SET history_id = $2 WHERE id = $1 RETURNING *`;
+
+    const result = await this.databaseService.runQuery(query, [integrationTokenId, historyId]);
+    const updatedIntegrationToken = result.rows[0];
+
+    return updatedIntegrationToken;
+  }
 }

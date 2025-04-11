@@ -1,6 +1,6 @@
 -- ENUM TYPES
 
-CREATE TYPE event_type AS ENUM ('outgoing', 'incoming', 'closed', 'booked');
+CREATE TYPE event_type AS ENUM ('outgoing', 'incoming', 'closed', 'booked', 'reply');
 CREATE TYPE campaign_lead_status AS ENUM ('new', 'engaged', 'closed', 'booked');
 CREATE TYPE link_status AS ENUM ('pending', 'scrapped', 'error', 'unscrapable');
 CREATE TYPE lead_status AS ENUM ('pending', 'active', 'closed');

@@ -17,9 +17,11 @@ import { leadService } from '../../../api/leadService'
 import { Lead } from '../../Lead/lead.types'
 
 interface AddLeadsTableProps {
-  onLeadsAdd: (selectedLeads: Lead[]) => void
+  onLeadsAdd: (selectedLeads: Lead[]) => void;
+  campaignId: number;
 }
-export function AddLeadsTable({ onLeadsAdd }: AddLeadsTableProps) {
+export function AddLeadsTable(params: AddLeadsTableProps) {
+  const { onLeadsAdd, campaignId } = params
   const [selectedLeads, setSelectedLeads] = useState<Lead[]>([])
   const [leads, setLeads] = useState<Lead[]>([])
   const toast = useToast();
@@ -32,7 +34,7 @@ export function AddLeadsTable({ onLeadsAdd }: AddLeadsTableProps) {
   const fetchLeads = async () => {
     try {
       // Pass 0 for both page and size to get all leads
-      const data = await leadService.getLeads({ page: 0, size: 0 });
+      const data = await leadService.getLeads({ page: 0, size: 0, campaignId });
 
       setLeads(data.leads);
     } catch (error: any) {

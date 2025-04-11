@@ -7,6 +7,7 @@ interface GetLeadsParams {
   page: number;
   size: number;
   userId: number;
+  campaignId?: number;
 }
 
 interface CreateLeadParams {
@@ -45,11 +46,11 @@ export class LeadService {
   }
 
   public async getLeads(params: GetLeadsParams) {
-    const { page, size, userId } = params;
+    const { page, size, userId, campaignId } = params;
 
     this.logger.log(`Getting leads for page: ${page} and size: ${size}`);
 
-    return this.leadRepository.getLeads({page, size, userId});
+    return this.leadRepository.getLeads({page, size, userId, campaignId});
   }
 
   public async getTotalPages(params: GetTotalPagesParams) {

@@ -1,8 +1,15 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { Logger } from "@nestjs/common";
 
-import { CreateEventDto, Event } from "./event.types";
+import { CreateEventDto, Event, EventJoinedWithLead } from "./event.types";
 import { DatabaseService } from "../database/database.service";
+
+interface GetCampaignEventsParams { 
+  userId: number;
+  campaignId: number 
+}
+
+
 
 @Injectable()
 export class EventRepository {
@@ -78,6 +85,31 @@ export class EventRepository {
       return result.rows;
     } catch (error) {
       this.logger.error("Error fetching events by thread_id", query, values, error);
+      return null;
+    }
+  }
+
+  public async getCampaignEvents(params: GetCampaignEventsParams): Promise<EventJoinedWithLead[]> {
+    const { userId, campaignId } = params;
+    const query = `
+        SELECT event.*, l.first_name, l.last_name
+        FROM event
+        LEFT JOIN lead l ON event.lead_id = l.id
+        WHERE campaign_id = $1;
+      `
+    const values = [campaignId];
+
+    try {
+      const result = await this.databaseService.runQuery(query, values);
+      const events: EventJoinedWithLead[] = result.rows;
+
+      this.logger.log(`Total events for user ${userId} and campaign ${campaignId}: ${events.length}`);
+
+      return events;
+    }
+    catch (error) {
+      this.logger.error(`Error fetching events for user ${userId} and campaign ${campaignId}`, error);
+      
       return null;
     }
   }

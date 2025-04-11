@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Table, Thead, Tbody, Tr, Th, Td, Box, Badge, Button, Input, useToast } from '@chakra-ui/react';
+import { Table, Thead, Tbody, Tr, Th, Td, Box, Badge, useToast } from '@chakra-ui/react';
 import { campaignLeadsService } from '../../../api/campaignLeads';
-import { useMutation } from '@tanstack/react-query';
+
 
 interface CampaignLead {
   id: number;

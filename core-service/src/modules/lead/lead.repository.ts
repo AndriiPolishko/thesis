@@ -15,6 +15,7 @@ interface GetLeadsParams {
   page: number;
   size: number;
   userId: number;
+  campaignId?: number;
 }
 
 interface GetLeadByIdParams {
@@ -60,10 +61,24 @@ export class LeadRepository {
   }
 
   public async getLeads(params: GetLeadsParams): Promise<Lead[]> {
-    const { page, size, userId } = params;
+    const { page, size, userId, campaignId } = params;
     
     if (page == 0 && size == 0) {
       this.logger.log(`Getting all leads for user ${userId}`);
+
+      if (campaignId) {
+        this.logger.log(`Getting leads that are not present in campaign ${campaignId} for user ${userId}`);
+        const query = `
+          SELECT * FROM lead
+          WHERE user_id = $1
+          AND id NOT IN (
+            SELECT lead_id FROM campaign_lead WHERE campaign_id = $2
+          );`;
+        const result = await this.databaseService.runQuery(query, [userId, campaignId]);
+        const leads: Lead[] = result.rows;
+        
+        return leads;
+      }
 
       const result = await this.databaseService.runQuery('SELECT * FROM lead WHERE user_id = $1', [userId]);
       const leads: Lead[] = result.rows;

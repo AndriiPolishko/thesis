@@ -22,6 +22,11 @@ export interface Event {
   updated_at: string;
 }
 
+export interface EventJoinedWithLead extends Event {
+  first_name: string;
+  last_name: string;
+}
+
 export interface CreateEventDto {
   from: string;
   to: string;

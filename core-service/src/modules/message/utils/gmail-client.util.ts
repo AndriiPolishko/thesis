@@ -6,7 +6,8 @@ import { gmail_v1, google } from 'googleapis';
 import { SendEmailMessagePayload } from '../message.service';
 import { EventRepository } from 'src/modules/event/event.repository';
 import { EventType } from 'src/modules/event/event.types';
-import { IntegrationTokenRepository } from 'src/modules/integrationToken/integration-token.repository';
+import { CampaignLeadRepository } from 'src/modules/campaign-leads/campaign-lead.repository';
+import { CampaignLeadStatus } from 'src/modules/campaign-leads/campaign-lead.types';
 
 interface SendEmailParams {
   access_token: string;
@@ -50,7 +51,7 @@ export class GmailClientUtil {
 
   constructor(
     @Inject(EventRepository) private readonly eventRepository: EventRepository,
-    @Inject(IntegrationTokenRepository) private readonly integrationTokenRepository: IntegrationTokenRepository,
+    @Inject(CampaignLeadRepository) private readonly campaignLeadRepo: CampaignLeadRepository,
   ){}
 
   // TODO: move it out of this class
@@ -169,6 +170,9 @@ export class GmailClientUtil {
         body
       });
       await this.eventRepository.createEvent({ from: from_email, to, type: EventType.Outgoing, body, subject, thread_id, lead_id, campaign_id, campaign_lead_id: campaignLeadId, message_id });
+
+      // Change status of the campaign lead
+      await this.campaignLeadRepo.updateStatus(campaignLeadId, CampaignLeadStatus.AwaitingReply);
     }
     catch (error) {
       this.logger.error('Error sending outgoing message', { error });
@@ -176,7 +180,7 @@ export class GmailClientUtil {
   }
 
   async sendReply(params: SendReplyParams) {
-    const { to, subject, body, thread_id, message_id, gmail } = params;
+    const { to, subject, body, thread_id, message_id, gmail, campaignLeadId } = params;
 
     try {
       const headers = [
@@ -220,6 +224,9 @@ export class GmailClientUtil {
         campaign_lead_id: params.campaignLeadId,
         message_id
       });
+
+      // Change status of the campaign lead
+      await this.campaignLeadRepo.updateStatus(campaignLeadId, CampaignLeadStatus.AwaitingReply);
     } catch (error) {
       this.logger.error('Error sending reply', { error });
     }

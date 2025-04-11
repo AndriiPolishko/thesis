@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { Logger } from "@nestjs/common";
 
 import { DatabaseService } from '../database/database.service';
-import { CampaignLeadJoinLead, AddCampaignLeadsParams } from './campaign-lead.types';
+import { CampaignLeadJoinLead, AddCampaignLeadsParams, CampaignLeadStatus } from './campaign-lead.types';
 
 interface AddCampaignLeadToDatabaseParams {
   campaignId: number;
@@ -71,6 +71,23 @@ export class CampaignLeadRepository {
       return campaignLead;
     } catch (error) {
       this.logger.error(`Error on adding campaign lead for user ${userId} with campaignId: ${campaignId} and leadId: ${leadId}`, error);
+    }
+  }
+
+  public async updateStatus(campaignLeadId: number, status: CampaignLeadStatus): Promise<void> {
+    const query = `
+      UPDATE campaign_lead
+      SET status = $2
+      WHERE id = $1;
+    `;
+    const values = [campaignLeadId, status];
+
+    try {
+      await this.databaseService.runQuery(query, values);
+      
+      this.logger.log(`Successfully updated status for campaign lead ${campaignLeadId} to ${status}`);
+    } catch (error) {
+      this.logger.error(`Error updating status for campaign lead ${campaignLeadId} to ${status}`, error);
     }
   }
 }

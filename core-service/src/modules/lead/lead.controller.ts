@@ -28,9 +28,9 @@ export class LeadController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get()
-  async getLeads(@Req() req, @Query('page') page: number, @Query('size') size: number): Promise<{ leads: Lead[], totalPages: number }> {
+  async getLeads(@Req() req, @Query('page') page: number, @Query('size') size: number, @Query('campaignId') campaignId?: number): Promise<{ leads: Lead[], totalPages: number }> {
     const userId: number = req?.user?.id;
-    const leads: Lead[] = await this.leadService.getLeads({ page, size, userId });
+    const leads: Lead[] = await this.leadService.getLeads({ page, size, userId, campaignId });
     const totalPages = await this.leadService.getTotalPages({pageSize: size, userId});
 
     return {

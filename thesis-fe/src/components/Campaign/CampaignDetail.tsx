@@ -171,12 +171,12 @@ export function CampaignDetail() {
         </VStack>
         <VStack align="stretch" spacing={4}>
           <Heading size="md">Add Leads</Heading>
-          <AddLeadsTable onLeadsAdd={handleLeadsAdd} />
+          <AddLeadsTable onLeadsAdd={handleLeadsAdd}  campaignId={campaignId}/>
         </VStack>
         <Divider />
         <VStack align="stretch" spacing={4}>
           <Heading size="md">Campaign Events</Heading>
-          <CampaignEventsTable />
+          <CampaignEventsTable campaignId={campaignId} />
         </VStack>
       </VStack>
     </Box>

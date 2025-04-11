@@ -11,6 +11,7 @@ interface LeadCreationData {
 interface GetLeadsParams {
   page: number;
   size: number;
+  campaignId?: number;
 }
 
 export const leadService = {
@@ -27,12 +28,13 @@ export const leadService = {
   },
   getLeads: async (params: GetLeadsParams) => {
     const getLeadsUrl = `${baseApiUrl}/lead`
-    const { page, size } = params;
+    const { page, size, campaignId } = params;
     const response = await axios.get(getLeadsUrl, {
       withCredentials: true,
       params: {
         page,
         size,
+        campaignId
       },
     });
 

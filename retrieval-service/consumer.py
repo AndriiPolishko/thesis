@@ -8,6 +8,7 @@ from typing import Optional
 from config import KAFKA_BROKER, KAFKA_GROUP_ID, EMAIL_GENERATION_TOPIC
 from openai_prompts import outgoing_system_prompt, outgoing_user_prompt, reply_system_prompt, reply_user_prompt
 from producer import email_producer
+from vector_db_retriever import fetch_related_info_from_vector_db_based_on_last_message
 
 # Interface for a received email generation message 
 class EmailGenerationMessage(BaseModel):
@@ -27,6 +28,25 @@ class EmailCreationConsumer():
     self.is_running = False
     self.client = AsyncOpenAI()
     self.model = "gpt-4o"
+    
+  async def get_last_message_from_the_thread(self, thread: str):
+    system_message = 'Your goal is to extract the last message from the email thread. THE LAST MESSAGE appears at the beginning of the thread.'
+    user_message = f'Extract the last message from the thread: {thread}'
+    completion = await self.client.chat.completions.create(
+    model=self.model,
+    messages=[
+        {
+            "role": "system",
+            "content": system_message
+        },
+        {
+            "role": "user",
+            "content": user_message
+        }
+    ])
+    last_message = completion.choices[0].message.content
+
+    return last_message
   
   '''
   Function to initialize the consumer
@@ -68,6 +88,7 @@ class EmailCreationConsumer():
   Function to generate a reply to an email
   '''
   async def generate_reply(self, first_name, last_name, campaign_goal, thread, last_message, retrieved_info) -> str:
+    # TODO: Use the retrieved info to generate a reply
     user_reply_prompt = reply_user_prompt.format(first_name=first_name, last_name=last_name, campaign_goal=campaign_goal, thread=thread, last_message=last_message, retrieved_info=retrieved_info)
     completion = await self.client.chat.completions.create(
     model=self.model,
@@ -161,10 +182,10 @@ class EmailCreationConsumer():
     campaign_goal = message.campaign_goal
     first_name = message.first_name
     last_name = message.last_name
-    last_message = message.last_message
+    last_message = await self.get_last_message_from_the_thread(thread)
     message_id = message.message_id
     # TODO: Retrieve info relevant to the last message from the vector db
-    retrieved_info = "This is some retrieved info"
+    retrieved_info = await fetch_related_info_from_vector_db_based_on_last_message(last_message)
     # Generated reply email
     generated_reply = await self.generate_reply(first_name, last_name, campaign_goal, thread, last_message, retrieved_info)
     

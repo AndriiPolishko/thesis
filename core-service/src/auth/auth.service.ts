@@ -4,9 +4,9 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { UserRepository } from '../user/user.repository';
+import { UserRepository } from '../modules/user/user.repository';
 import { IntegrationTokenRepository } from 'src/modules/integrationToken/integration-token.repository';
-import { User } from 'src/user/user.types';
+import { User } from 'src/modules/user/user.types';
 import { Request } from 'express';
 
 interface CreateUserEntity {
@@ -68,7 +68,7 @@ export class AuthService {
       const { data: watchResponseData } = watchResponse;
       const { historyId: history_id, expiration: webhookExpirationTimestamp } = watchResponseData;
       const webhookExpiresAt = new Date(Number(webhookExpirationTimestamp));
-      const {user: existingUser} = await this.userRepository.findOneByEmail(email);
+      const existingUser = await this.userRepository.findOneByEmail(email);
       if (existingUser) {
         // Check if integration token already exists
         const existingIntegrationToken = await this.integrationTokenRepository.findByEmail(email);

@@ -4,7 +4,7 @@ import { Response, Request } from 'express';
 import { GoogleAuthGuard } from './guards/guards';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
-import { User } from 'src/user/user.types';
+import { User } from 'src/modules/user/user.types';
 
 @Controller('auth/google')
 export class AuthController {

@@ -9,7 +9,7 @@ reply_system_prompt = 'Act a top sales person'
 reply_user_prompt = '''
 Write a reply to the email below. Your goal is {campaign_goal}.
 
-Reply to this email: {last_message}
-Message thread: {thread}
-Use this info for the reply: {retrieved_info}
+Reply to this email: {last_message}.
+Message thread: {thread}.
+Use this additional info to construct your message: {retrieved_info}
 '''

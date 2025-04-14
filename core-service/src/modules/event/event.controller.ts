@@ -2,7 +2,7 @@ import { Controller, Get, Inject, Query, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { Request } from "express";
 
-import { User } from "src/user/user.types";
+import { User } from "src/modules/user/user.types";
 import { EventService } from "./event.service";
 import { Event } from "./event.types";
 

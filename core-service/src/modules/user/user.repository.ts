@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 
-import { DatabaseService } from '../modules/database/database.service';
+import { DatabaseService } from '../database/database.service';
 import { CreateUserEntity, User } from "./user.types";
 
 
@@ -30,13 +30,13 @@ export class UserRepository {
     return user;
   }
 
-  async findOneByEmail(email: string): Promise<{ user: User }> {
+  async findOneByEmail(email: string): Promise<User> {
     const query = `
       SELECT * FROM "user" WHERE email = $1`;
 
     const result = await this.databaseService.runQuery(query, [email]);
     const user = result.rows[0] as User;
 
-    return { user };
+    return user;
   }
 }

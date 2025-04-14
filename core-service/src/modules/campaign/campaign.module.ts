@@ -9,9 +9,10 @@ import { QueueModule } from "../queue/queue.module";
 import { IntegrationTokenModule } from "../integrationToken/integration-token.module";
 import { EventModule } from "../event/event.module"; 
 import { LeadModule } from "../lead/lead.module";
+import { UserModule } from "../user/user.module";
 
 @Module({
-  imports: [DatabaseModule, LinkModule, CampaignLeadModule, QueueModule, IntegrationTokenModule, EventModule, LeadModule],
+  imports: [DatabaseModule, LinkModule, CampaignLeadModule, QueueModule, IntegrationTokenModule, EventModule, LeadModule, UserModule],
   controllers: [CampaignController],
   exports: [CampaignService, CampaignRepository],
   providers: [CampaignService, CampaignRepository]

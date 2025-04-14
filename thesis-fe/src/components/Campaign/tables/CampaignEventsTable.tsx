@@ -47,7 +47,7 @@ export function CampaignEventsTable(params: CampaignEventsTableProps) {
 
   const fetchEvents = async () => {
     try {
-      const events = await eventService.getEvents(campaignId);
+      const {events} = await eventService.getEvents(campaignId);
 
       setEvents(events);
     } catch (error) {

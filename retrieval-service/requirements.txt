@@ -1,4 +1,7 @@
+numpy
 fastapi
 openai
 uvicorn[standard]
 aiokafka
+sentence_transformers
+psycopg[binary]

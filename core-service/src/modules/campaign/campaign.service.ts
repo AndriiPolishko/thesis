@@ -13,6 +13,8 @@ import { IntegrationTokenService } from "../integrationToken/integration-token.s
 import { EventRepository } from "../event/event.repository";
 import { LeadRepository } from "../lead/lead.repository";
 import { Campaign } from "./campaign.types";
+import { UserRepository } from '../user/user.repository'
+import { Event, EventType } from "../event/event.types";
 
 export enum CampaignStatus {
   Active = 'active',
@@ -33,7 +35,6 @@ interface EmailGenerationQueueObject {
   type: EmailGenerationQueueObjectType;
   thread?: string;
   thread_id?: string;
-  last_message?: string;
   message_id?: string;
 };
 
@@ -65,6 +66,10 @@ export class CampaignService {
 
   private readonly emailGenerationTopicName = 'email-generation';
 
+  private readonly openaiApiKey = this.configService.get<string>('OPENAI_API_KEY');
+
+  private readonly chatCompletionsUrl = 'https://api.openai.com/v1/chat/completions';
+
   constructor(
     private configService: ConfigService,
     @Inject(CampaignRepository) private readonly campaignRepository: CampaignRepository,
@@ -74,6 +79,7 @@ export class CampaignService {
     @Inject(IntegrationTokenService) private readonly integrationTokenService: IntegrationTokenService,
     @Inject(EventRepository) private readonly eventRepository: EventRepository,
     @Inject(LeadRepository) private readonly leadRepository: LeadRepository,
+    @Inject(UserRepository) private readonly userRepository: UserRepository,
   ) { }
 
   async createCampaign(createCampaignDto: { name: string, goal: string, owner_id: number, urls: string[] }): Promise<CampaignCreationResponse> {
@@ -151,8 +157,10 @@ export class CampaignService {
 
   public async handleIncoming(params: { userEmail: string, history_id: string }) {
     const { userEmail, history_id } = params;
+    const user = await this.userRepository.findOneByEmail(userEmail);
+    const userId = user.id;
 
-    this.logger.log(`Received incoming for user ${userEmail} with historyId: ${history_id}`);
+    this.logger.log(`Received incoming for user ${userEmail} with id ${userId} with historyId: ${history_id}`);
 
     const integrationToken = await this.integrationTokenRepository.findByEmail(userEmail);
     const { refresh_token, history_id: startHistoryId, expires_at } = integrationToken;
@@ -183,12 +191,12 @@ export class CampaignService {
     }
 
     if (!historyDetails?.history) {
-      this.logger.log(`No history details found for user ${userEmail} with historyId: ${history_id}. Skipping...`);
+      this.logger.log(`No history details found for user ${userEmail} with id ${userId} with historyId: ${history_id}. Skipping...`);
 
       return;
     }
 
-    this.logger.log(`Start processing ${historyDetails?.history.length} history details for user ${userEmail} with historyId: ${history_id}`);
+    this.logger.log(`Start processing ${historyDetails?.history.length} history details for user ${userEmail} with id ${userId} with historyId: ${history_id}`);
 
     for (const entry of historyDetails?.history) {
       if (entry.messagesAdded) {
@@ -199,12 +207,12 @@ export class CampaignService {
     }
 
     if (newMessageIds.length === 0) {
-      this.logger.log(`No new messages found for user ${userEmail} with historyId: ${history_id}. Skipping...`);
+      this.logger.log(`No new messages found for user ${userEmail} with id ${userId} with historyId: ${history_id}. Skipping...`);
 
       return;
     }
 
-    this.logger.log(`Found ${newMessageIds.length} new messages for user ${userEmail} with historyId: ${history_id}`);
+    this.logger.log(`Found ${newMessageIds.length} new messages for user ${userEmail} with id ${userId} with historyId: ${history_id}`);
 
     for (const messageId of newMessageIds) {
       const messageDetails = await this.getMessageDetails({ email: userEmail, messageId, accessToken: access_token });
@@ -224,35 +232,38 @@ export class CampaignService {
 
       const payload = messageDetails.payload;
       const headers = payload.headers;
-      const from = this.getHeader(headers, 'From');
+      const fromEmail = this.getHeader(headers, 'From');
 
-      if (from.includes(userEmail)) {
-        this.logger.log(`Skipping self-sent message from ${from}`);
+      if (fromEmail.includes(userEmail)) {
+        this.logger.log(`Skipping self-sent message from ${fromEmail}`);
 
         continue;
       }
 
       const firstExistingEvent = existingEvents[0];
-      const { campaign_id, lead_id } = firstExistingEvent;
+      const { campaign_id, lead_id, campaign_lead_id } = firstExistingEvent;
       const relatedCampaign = await this.campaignRepository.getCampaign(campaign_id);
       const campaignOwner = relatedCampaign.owner_id;
       const relatedLead = await this.leadRepository.findById({leadId: lead_id, userId: campaignOwner});
       const threadId = messageDetails.threadId;
-
       const body = this.extractBodyFromMessage(messageDetails);
-      const replyData = {
+      const messageIdHeader = headers.find(h => h.name.toLowerCase() === 'message-id')?.value;
+      const incomingData = {
         from: this.getHeader(headers, 'From'),
         to: this.getHeader(headers, 'To'),
         subject: this.getHeader(headers, 'Subject'),
-        date: this.getHeader(headers, 'Date'),
-        messageId: messageDetails.id,
-        threadId,
-        body
+        message_id: messageIdHeader,
+        thread_id: threadId,
+        body,
+        type: EventType.Incoming,
+        lead_id,
+        campaign_id,
+        campaign_lead_id
       };
-      // TODO: save replyData to DB
-      // FIXME: get the actual last message and not the whole thread
-      const last_message = body;
-      const messageIdHeader = headers.find(h => h.name.toLowerCase() === 'message-id')?.value;
+
+      this.logger.log(`Saving incoming message to the database for user ${userId}`)
+
+      await this.eventRepository.createEvent(incomingData)
 
       // Push data for the reply generation to the queue
       const replyGenerationQueueObject: EmailGenerationQueueObject = {
@@ -264,7 +275,6 @@ export class CampaignService {
         thread: body,
         thread_id: threadId,
         type: EmailGenerationQueueObjectType.Reply,
-        last_message,
         message_id: messageIdHeader
       };
 

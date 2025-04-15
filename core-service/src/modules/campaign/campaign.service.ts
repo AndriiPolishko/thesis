@@ -7,14 +7,14 @@ import { Buffer } from 'buffer';
 import { CampaignCreationResponse, CampaignCreationStatus, CreateCampaignDto } from "./campaign.dto";
 import { CampaignRepository } from "./campaign.repository";
 import { CampaignLeadRepository } from "../campaign-leads/campaign-lead.repository";
-import { QueueService } from "../queue/queue.service";
 import { IntegrationTokenRepository } from "../integrationToken/integration-token.repository";
 import { IntegrationTokenService } from "../integrationToken/integration-token.service";
 import { EventRepository } from "../event/event.repository";
 import { LeadRepository } from "../lead/lead.repository";
 import { Campaign } from "./campaign.types";
 import { UserRepository } from '../user/user.repository'
-import { Event, EventType } from "../event/event.types";
+import { EventType } from "../event/event.types";
+import { MessageGenerationProducer } from "../queue/producers/message-generation.producer";
 
 export enum CampaignStatus {
   Active = 'active',
@@ -70,16 +70,18 @@ export class CampaignService {
 
   private readonly chatCompletionsUrl = 'https://api.openai.com/v1/chat/completions';
 
+  private readonly messageGenerationGroupId = 'message_generation_group_id';
+
   constructor(
     private configService: ConfigService,
     @Inject(CampaignRepository) private readonly campaignRepository: CampaignRepository,
     @Inject(CampaignLeadRepository) private readonly campaignLeadRepository: CampaignLeadRepository,
-    @Inject(QueueService) private readonly queueService: QueueService,
     @Inject(IntegrationTokenRepository) private readonly integrationTokenRepository: IntegrationTokenRepository,
     @Inject(IntegrationTokenService) private readonly integrationTokenService: IntegrationTokenService,
     @Inject(EventRepository) private readonly eventRepository: EventRepository,
     @Inject(LeadRepository) private readonly leadRepository: LeadRepository,
     @Inject(UserRepository) private readonly userRepository: UserRepository,
+    @Inject(MessageGenerationProducer) private readonly messageGenerationProducer: MessageGenerationProducer
   ) { }
 
   async createCampaign(createCampaignDto: { name: string, goal: string, owner_id: number, urls: string[] }): Promise<CampaignCreationResponse> {
@@ -137,7 +139,7 @@ export class CampaignService {
         type: EmailGenerationQueueObjectType.Outgoing
       };
 
-      await this.queueService.send(this.emailGenerationTopicName, emailGenerationQueueObject);
+      await this.messageGenerationProducer.produce(emailGenerationQueueObject, this.messageGenerationGroupId);
     }
   }
 
@@ -278,9 +280,7 @@ export class CampaignService {
         message_id: messageIdHeader
       };
 
-      await this.queueService.send(this.emailGenerationTopicName, replyGenerationQueueObject);
-
-      //messagesDetails.push(messageDetails);
+      await this.messageGenerationProducer.produce(replyGenerationQueueObject, this.messageGenerationGroupId);
     }
     
   }

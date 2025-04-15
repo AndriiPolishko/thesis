@@ -1,16 +1,15 @@
 import { Module } from '@nestjs/common';
-import { KafkaAdapter } from './adapters/kafka.adapter';
-import { QueueService } from './queue.service';
 import { MessageGenerationProducer } from './producers/message-generation.producer';
-import { GeneratedMessageConsumer } from './consumers/generated-message.consumer';
+import { GeneratedMessageConsumer } from './consumers/message-generation.consumer';
 
 @Module({
   providers: [
-    KafkaAdapter,
-    QueueService,
     MessageGenerationProducer,
     GeneratedMessageConsumer,
   ],
-  exports: [QueueService, MessageGenerationProducer],
+  exports: [
+    MessageGenerationProducer,
+    GeneratedMessageConsumer
+  ],
 })
 export class QueueModule {}

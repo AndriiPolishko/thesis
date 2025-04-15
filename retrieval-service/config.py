@@ -22,3 +22,7 @@ DB_PASS = os.getenv("DB_PASS", "root")
 
 # Embedding Model
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME")
+
+# AWS
+AWS_REGION = os.getenv("AWS_REGION", "us-north-1")
+SQS_MESSAGE_GENERATION_QUEUE_URL=os.getenv("SQS_MESSAGE_GENERATION_QUEUE_URL")

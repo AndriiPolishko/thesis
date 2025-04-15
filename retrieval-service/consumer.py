@@ -1,11 +1,11 @@
-import json
+import aioboto3
+
 import logging
 from openai import AsyncOpenAI
-from aiokafka import AIOKafkaConsumer
 from pydantic import BaseModel
 from typing import Optional
 
-from config import KAFKA_BROKER, KAFKA_GROUP_ID, EMAIL_GENERATION_TOPIC
+from config import KAFKA_BROKER, KAFKA_GROUP_ID, EMAIL_GENERATION_TOPIC, AWS_REGION, SQS_MESSAGE_GENERATION_QUEUE_URL
 from openai_prompts import outgoing_system_prompt, outgoing_user_prompt, reply_system_prompt, reply_user_prompt
 from producer import email_producer
 from vector_db_retriever import fetch_related_info_from_vector_db_based_on_last_message
@@ -24,10 +24,52 @@ class EmailGenerationMessage(BaseModel):
 
 class EmailCreationConsumer():
   def __init__(self):
-    self.consumer = None
-    self.is_running = False
     self.client = AsyncOpenAI()
     self.model = "gpt-4o"
+    self.aioboto_session = aioboto3.Session()
+    self.aws_region = AWS_REGION
+    self.sqs_message_generation_queue_url = SQS_MESSAGE_GENERATION_QUEUE_URL
+
+  '''
+  Function to consume messages from the queue for email generation
+  '''
+  async def consume(self):
+    try:
+      logging.info("Starting email generation consumer...")
+      
+      async with self.aioboto_session.client("sqs", region_name = self.aws_region) as sqs:
+        while True:
+          try:
+            response = await sqs.receive_message(
+              QueueUrl=self.sqs_message_generation_queue_url,
+              MaxNumberOfMessages=10,
+              WaitTimeSeconds=20,  # long polling
+              MessageAttributeNames=["All"],
+            )
+            messages = response.get('Messages', [])
+
+            for msg in messages:
+              body = msg["Body"]
+              try:
+                message_obj = EmailGenerationMessage.parse_raw(body)
+                if message_obj.thread_id or message_obj.thread:
+                  await self.handle_reply(message_obj)
+                else:
+                  await self.handle_outgoing(message_obj)
+                
+                # Delete message after processing
+                await sqs.delete_message(
+                  QueueUrl=self.sqs_message_generation_queue_url,
+                  ReceiptHandle=msg["ReceiptHandle"]
+                )
+              except Exception as e:
+                  logging.exception(f"Error handling message: {e}")
+
+          except Exception as e:
+              logging.exception(f"Error receiving messages: {e}")
+
+    except Exception as e:
+      logging.exception(f"Error starting consumer: {e}")
     
   async def get_last_message_from_the_thread(self, thread: str):
     system_message = 'Your goal is to extract the last message from the email thread. THE LAST MESSAGE appears at the beginning of the thread.'
@@ -47,21 +89,7 @@ class EmailCreationConsumer():
     last_message = completion.choices[0].message.content
 
     return last_message
-  
-  '''
-  Function to initialize the consumer
-  '''
-  async def initialize(self):
-    self.consumer = AIOKafkaConsumer(
-      EMAIL_GENERATION_TOPIC,
-      bootstrap_servers=KAFKA_BROKER,
-      group_id=KAFKA_GROUP_ID,
-      auto_offset_reset="latest"
-    )
-    self.is_running = True
-    
-    await self.consumer.start()
-  
+
   '''
   Function to generate an outgoing email
   '''
@@ -105,49 +133,7 @@ class EmailCreationConsumer():
     generated_reply = completion.choices[0].message.content
     
     return generated_reply
-  
-  '''
-  Function to consume messages from the queue for email generation
-  '''
-  async def consume(self):
-    if not self.is_running:
-      await self.initialize()
-    
-    while self.is_running:
-      try:
-        messages_batch = await self.consumer.getmany(timeout_ms=1000)
-        for _, messages in messages_batch.items():
-          for message in messages:
-            message_str = message.value.decode()
-            print(f"Received message: {message.value.decode()}")
-            try:
-              message_obj = EmailGenerationMessage.parse_raw(message_str)
-              # json.loads(message_str)
-              thread_id = message_obj.thread_id
-              thread = message_obj.thread
 
-              # In case we received thread id, it means we need to generated a reply
-              if thread_id or thread:
-                await self.handle_reply(message_obj)
-              else:
-                await self.handle_outgoing(message_obj)
-
-            except Exception as e:
-              logging.error(f"Error parsing message: {e}")
-              continue
-        
-      except Exception as e:
-        logging.error(f"Error consuming message: {e}")
-  
-  '''
-  Function to stop the consumer
-  '''
-  async def stop(self):
-    if self.is_running:
-      self.is_running = False
-      await self.consumer.stop()
-      self.consumer = None
-  
   '''
   Function to handle the outgoing email generation
   '''

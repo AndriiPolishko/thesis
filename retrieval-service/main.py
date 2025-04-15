@@ -17,16 +17,13 @@ router = APIRouter()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
   # initialize email generation consumer
-  await email_creation_consumer.initialize()
   await email_producer.initialize()
   
   consumer_task = asyncio.create_task(email_creation_consumer.consume())
   
-  
   yield
   
   # Stop the consumer and producer
-  await email_creation_consumer.stop()
   consumer_task.cancel()
   await email_producer.stop()
   # Stop the database connection

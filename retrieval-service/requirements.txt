@@ -5,3 +5,4 @@ uvicorn[standard]
 aiokafka
 sentence_transformers
 psycopg[binary]
+aioboto3

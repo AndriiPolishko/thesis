@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
-aiokafka
 sentence-transformers
 psycopg[binary]
 dotenv
 redis[hiredis]
+aioboto3

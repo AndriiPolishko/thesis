@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from redis import Redis
 
-from producer import kafka_producer
+from producer import sqs_producer
 from utils import scrape_url_and_get_text, add_protocol_if_missing, get_preprocessed_text, generate_text_hash, chunk_text
 from db import database, LinkStatusEnum
 
@@ -26,16 +26,17 @@ async def lifespan(app: FastAPI):
     logging.info("Starting up...")
     
     await database.connect()
-    await kafka_producer.start()
+    await sqs_producer.initialize()
     
     yield
     
     logging.info("Shutting down...")
-    await kafka_producer.stop()
+    await sqs_producer.stop()
     await database.close()
 
 app = FastAPI(lifespan=lifespan)
 
+# TODO: Testing endpoint. Remove
 @app.get('/redis/set')
 async def set_key(key: str, value: str):
     try:
@@ -50,7 +51,7 @@ async def read_root():
     return {"status": "ok"}
 
 async def process_scraping(urls: list[str], campaign_id: int):
-    """Background task to scrape URLs and send data to Kafka."""
+    """Background task to scrape URLs and send data to SQS queue"""
 
     for url in urls:
         url = add_protocol_if_missing(url)
@@ -91,7 +92,7 @@ async def process_scraping(urls: list[str], campaign_id: int):
                     "campaign_id": campaign_id,
                 }
 
-                await kafka_producer.send_message(message)
+                await sqs_producer.send_message(message)
         except Exception as e:
             logging.error(f"Error scraping {url}: {str(e)}")
             await database.update_link(link_id, None, LinkStatusEnum.Error, datetime.now())

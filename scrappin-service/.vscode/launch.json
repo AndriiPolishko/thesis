@@ -9,14 +9,6 @@
           "console": "integratedTerminal",
           "envFile": "${workspaceFolder}/.env",
           "justMyCode": false
-      },
-      {
-          "name": "Kafka Consumer Debug",
-          "type": "debugpy",
-          "request": "launch",
-          "program": "${workspaceFolder}/consumer.py",
-          "console": "integratedTerminal",
-          "envFile": "${workspaceFolder}/.env"
       }
   ]
 }

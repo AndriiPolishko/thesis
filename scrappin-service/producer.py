@@ -1,37 +1,41 @@
 import json
 import logging
-from aiokafka import AIOKafkaProducer
-from config import KAFKA_BROKER, KAFKA_PRODUCER_TOPIC
+import aioboto3
+import uuid
+
+from config import SQS_EMBEDDING_QUEUE_URL, AWS_REGION
 
 logging.basicConfig(level=logging.INFO)
 
-class KafkaProducerService:
-    """Kafka Producer Service for sending chunked text messages."""
+class SQSproducer:
+    """SQS Producer for sending chunked text messages."""
     
     def __init__(self):
-        self.producer = None  # Will be initialized on startup
+        self.session = aioboto3.Session()
+        self.sqs_client = None
 
-    async def start(self):
-        """Starts the Kafka producer."""
-        self.producer = AIOKafkaProducer(bootstrap_servers=KAFKA_BROKER)
-        await self.producer.start()
-        logging.info("✅ Kafka producer started.")
+    async def initialize(self):
+        self.sqs_client = await self.session.client("sqs", region_name=AWS_REGION).__aenter__()
+        logging.info("✅ SQS EmbeddingQueue initialized.")
 
     async def send_message(self, message: dict):
-        """Sends a message to the Kafka topic."""
-        if not self.producer:
-            logging.error("❌ Kafka producer is not initialized.")
-            return
-
-        message_bytes = json.dumps(message).encode("utf-8")
-        await self.producer.send(KAFKA_PRODUCER_TOPIC, message_bytes)
-        logging.info(f"📨 Sent message: {message}")
+        try:
+            await self.sqs_client.send_message(
+                QueueUrl=SQS_EMBEDDING_QUEUE_URL,
+                MessageBody=json.dumps(message),
+                MessageGroupId=f"chunk-to-embed",
+                # Unique ID to avoid duplication
+                # TODO: consider removing
+                MessageDeduplicationId=str(uuid.uuid4())
+            )
+            logging.info(f"✅ SQS message sent: {message}")
+        except Exception as e:
+            logging.exception("❌ Failed to send message to SQS")
 
     async def stop(self):
-        """Stops the Kafka producer."""
-        if self.producer:
-            await self.producer.stop()
-            logging.info("✅ Kafka producer stopped.")
+        if self.sqs_client:
+            await self.sqs_client.__aexit__(None, None, None)
+            logging.info("✅ SQS EmbeddingQueue stopped.")
 
 # Create a global instance
-kafka_producer = KafkaProducerService()
+sqs_producer = SQSproducer()

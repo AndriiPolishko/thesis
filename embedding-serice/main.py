@@ -16,12 +16,11 @@ redis = Redis(host="localhost", port=6379, decode_responses=True)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handles startup and shutdown tasks."""
-    await chunks_consumer.initialize()
-    consumer_task = asyncio.create_task(chunks_consumer.consume())  # Start Kafka consumer
+    consumer_task = asyncio.create_task(chunks_consumer.consume())
     yield
     
-    logging.info("Shutting down Kafka consumer...")
-    await chunks_consumer.stop_consumer()  # Properly stop the consumer
+    logging.info("Shutting down the service...")
+
     consumer_task.cancel()
     try:
         await consumer_task
@@ -31,6 +30,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# TODO: Testing endpoint. Remove
 @app.get('/redis/get')
 async def redis_get(key: str):
     return redis.get(key)

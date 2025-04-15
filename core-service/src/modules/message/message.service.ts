@@ -6,16 +6,7 @@ import { CampaignRepository } from "../campaign/campaign.repository";
 import { GmailClientUtil } from "./utils/gmail-client.util";
 import { LeadRepository } from "../lead/lead.repository";
 import { CampaignLeadRepository } from "../campaign-leads/campaign-lead.repository";
-
-export interface SendEmailMessagePayload {
-  campaign_id: number;
-  lead_id: number;
-  to_email: string;
-  subject: string;
-  body: string;
-  thread_id?: string;
-  message_id?: string;
-}
+import {GeneratedEmailMessage } from '../queue/queue.types'
 
 @Injectable()
 export class MessageService {
@@ -29,12 +20,11 @@ export class MessageService {
     @Inject(CampaignLeadRepository) private readonly campaignLeadRepo: CampaignLeadRepository,
   ) {}
 
-  async handleSendEmailMessage(payload: SendEmailMessagePayload) {
+  async handleSendEmailMessage(payload: GeneratedEmailMessage) {
     const { campaign_id, lead_id, to_email } = payload;
     try {
       const campaign = await this.campaignRepo.findById(campaign_id);
       const userId = campaign.owner_id;
-
       let token = await this.tokenRepo.findByUserId(userId);
 
       if (!token) {
@@ -52,7 +42,6 @@ export class MessageService {
       }
 
       const from_email = token.email;
-
       // TODO: Add a check before refreshing the token
       const refreshed = await this.gmailUtil.refreshAccessToken(token.refresh_token);
       const { accessToken, refreshToken, expiresAt} = refreshed;

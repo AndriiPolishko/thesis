@@ -5,7 +5,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel
 from typing import Optional
 
-from config import KAFKA_BROKER, KAFKA_GROUP_ID, EMAIL_GENERATION_TOPIC, AWS_REGION, SQS_MESSAGE_GENERATION_QUEUE_URL
+from config import AWS_REGION, SQS_MESSAGE_GENERATION_QUEUE_URL
 from openai_prompts import outgoing_system_prompt, outgoing_user_prompt, reply_system_prompt, reply_user_prompt
 from producer import email_producer
 from vector_db_retriever import fetch_related_info_from_vector_db_based_on_last_message
@@ -49,7 +49,14 @@ class EmailCreationConsumer():
             messages = response.get('Messages', [])
 
             for msg in messages:
+              # Delete message before processing
+              await sqs.delete_message(
+                QueueUrl=self.sqs_message_generation_queue_url,
+                ReceiptHandle=msg["ReceiptHandle"]
+              )
+              
               body = msg["Body"]
+              
               try:
                 message_obj = EmailGenerationMessage.parse_raw(body)
                 if message_obj.thread_id or message_obj.thread:
@@ -57,11 +64,7 @@ class EmailCreationConsumer():
                 else:
                   await self.handle_outgoing(message_obj)
                 
-                # Delete message after processing
-                await sqs.delete_message(
-                  QueueUrl=self.sqs_message_generation_queue_url,
-                  ReceiptHandle=msg["ReceiptHandle"]
-                )
+
               except Exception as e:
                   logging.exception(f"Error handling message: {e}")
 
@@ -155,7 +158,7 @@ class EmailCreationConsumer():
     }
 
     await email_producer.send_email_payload(send_email_payload)
-    print(f"✅ Sent outgoing email payload to send-email topic: {send_email_payload}")
+    print(f"✅ Sent outgoing email payload to send-email queue: {send_email_payload}")
   
   '''
   Function to handle the reply email generation
@@ -170,7 +173,6 @@ class EmailCreationConsumer():
     last_name = message.last_name
     last_message = await self.get_last_message_from_the_thread(thread)
     message_id = message.message_id
-    # TODO: Retrieve info relevant to the last message from the vector db
     retrieved_info = await fetch_related_info_from_vector_db_based_on_last_message(last_message)
     # Generated reply email
     generated_reply = await self.generate_reply(first_name, last_name, campaign_goal, thread, last_message, retrieved_info)
@@ -185,6 +187,6 @@ class EmailCreationConsumer():
     }
     
     await email_producer.send_email_payload(send_email_payload)
-    print(f"✅ Sent reply email payload to send-email topic: {send_email_payload}")
+    print(f"✅ Sent reply email payload to send-email queue: {send_email_payload}")
     
 email_creation_consumer = EmailCreationConsumer()

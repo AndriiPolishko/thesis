@@ -1,26 +1,37 @@
-# producer.py
+import aioboto3
 import json
-from aiokafka import AIOKafkaProducer
-from config import KAFKA_BROKER, SEND_EMAIL_TOPIC
+import uuid
+import logging
+
+from config import AWS_REGION, SQS_GENERATED_MESSAGE_QUEUE_URL
 
 
 class EmailProducer:
     def __init__(self):
-        self.producer = None
+        self.session = aioboto3.Session()
+        self.sqs_client = None
 
     async def initialize(self):
-        self.producer = AIOKafkaProducer(bootstrap_servers=KAFKA_BROKER)
-        await self.producer.start()
+        self.sqs_client = await self.session.client("sqs", region_name=AWS_REGION).__aenter__()
+        logging.info("SQS EmailProducer initialized.")
 
     async def stop(self):
-        if self.producer:
-            await self.producer.stop()
+        if self.sqs_client:
+            await self.sqs_client.__aexit__(None, None, None)
+            logging.info("SQS EmailProducer stopped.")
 
     async def send_email_payload(self, payload: dict):
-        if not self.producer:
-            raise RuntimeError("Producer not started. Call `start()` first.")
-        
-        message = json.dumps(payload).encode("utf-8")
-        await self.producer.send_and_wait(SEND_EMAIL_TOPIC, message)
+        try:
+            await self.sqs_client.send_message(
+                QueueUrl=SQS_GENERATED_MESSAGE_QUEUE_URL,
+                MessageBody=json.dumps(payload),
+                MessageGroupId=f"generated_email",
+                # Unique ID to avoid duplication
+                # TODO: consider removing
+                MessageDeduplicationId=str(uuid.uuid4())
+            )
+            logging.info(f"✅ SQS message sent: {payload}")
+        except Exception as e:
+            logging.exception("❌ Failed to send message to SQS")
 
 email_producer = EmailProducer()

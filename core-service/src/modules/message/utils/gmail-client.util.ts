@@ -3,16 +3,16 @@ import { Inject, Logger } from '@nestjs/common';
 import { Injectable } from "@nestjs/common";
 import { gmail_v1, google } from 'googleapis';
 
-import { SendEmailMessagePayload } from '../message.service';
 import { EventRepository } from 'src/modules/event/event.repository';
 import { EventType } from 'src/modules/event/event.types';
 import { CampaignLeadRepository } from 'src/modules/campaign-leads/campaign-lead.repository';
 import { CampaignLeadStatus } from 'src/modules/campaign-leads/campaign-lead.types';
+import { GeneratedEmailMessage } from 'src/modules/queue/queue.types'
 
 interface SendEmailParams {
   access_token: string;
   refresh_token: string;
-  payload: SendEmailMessagePayload;
+  payload: GeneratedEmailMessage;
   from_email: string;
   campaignLeadId: number;
   integrationTokenId: number;

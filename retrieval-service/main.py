@@ -1,7 +1,6 @@
 from fastapi import APIRouter, FastAPI
 import uvicorn
 from contextlib import asynccontextmanager
-from aiokafka import AIOKafkaConsumer
 import asyncio
 
 from config import HOST, PORT

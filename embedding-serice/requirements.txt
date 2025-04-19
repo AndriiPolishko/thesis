@@ -5,3 +5,4 @@ psycopg[binary]
 dotenv
 redis[hiredis]
 aioboto3
+xxhash

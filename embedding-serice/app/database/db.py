@@ -1,5 +1,7 @@
 import psycopg as pg
-from config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
+import logging
+
+from config.config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
 
 class Database:
     def __init__(self):
@@ -23,7 +25,7 @@ class Database:
 
       try:
         if self.conn is None:
-            await self.connect()
+          await self.connect()
             
         query = "INSERT INTO embedding (link_id, chunk, embedding) VALUES (%s, %s, %s)"
         
@@ -37,19 +39,22 @@ class Database:
       except Exception as e:
         return False
 
-    async def mark_campaign_ready(self, campaign_id: str):
+    async def find_chunk_by_hash(self, chunk_hash):
+      """Finds a chunk by its hash."""
+
+      query = "SELECT * FROM embedding WHERE chunk_hash = %s;"
+
       try:
-        if self.conn is None:
-            await self.connect()
-            
-        query = "UPDATE campaign SET status = 'inactive' WHERE id = %s"
-        
-        await self.conn.execute(query, (campaign_id,))
-        
-        await self.conn.commit()
-        
-        return True
+        await self.connect()  # Ensure connection is available
+
+        async with self.conn.cursor() as cur:
+          await cur.execute(query, (chunk_hash))
+          result = await cur.fetchone()
+          
+          return result
       except Exception as e:
-        return False
+          logging.error(f"Error finding chunk by hash: {e}")
+      finally:
+          await self.close()
       
 database = Database()

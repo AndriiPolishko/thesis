@@ -8,6 +8,13 @@ export enum LinkCreationStatus {
   Error = 'error',
 }
 
+export enum LinkStatus {
+  Pending = 'pending',
+  Failed = 'failed',
+  Scrapped = 'scrapped',
+  CantBeScrapped = 'cant_be_scrapped',
+}
+
 export interface LinkCreationResponse {
   id?: number;
   status: LinkCreationStatus;

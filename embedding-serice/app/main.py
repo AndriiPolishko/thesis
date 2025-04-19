@@ -4,19 +4,15 @@ from fastapi import FastAPI
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from redis import Redis
 
-from consumer import chunks_consumer
-from db import database
-
-logging.basicConfig(level=logging.INFO)
-
-redis = Redis(host="localhost", port=6379, decode_responses=True)
+from consumer.consumer import chunks_consumer
+from database.db import database
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handles startup and shutdown tasks."""
     consumer_task = asyncio.create_task(chunks_consumer.consume())
+
     yield
     
     logging.info("Shutting down the service...")
@@ -29,11 +25,6 @@ async def lifespan(app: FastAPI):
     await database.close()
 
 app = FastAPI(lifespan=lifespan)
-
-# TODO: Testing endpoint. Remove
-@app.get('/redis/get')
-async def redis_get(key: str):
-    return redis.get(key)
 
 @app.get("/")
 async def read_root():

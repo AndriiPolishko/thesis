@@ -15,6 +15,8 @@ import { Campaign } from "./campaign.types";
 import { UserRepository } from '../user/user.repository'
 import { EventType } from "../event/event.types";
 import { MessageGenerationProducer } from "../queue/producers/message-generation.producer";
+import { LinkRepository } from "../link/link.repository";
+import { LinkCreationStatus, LinkStatus } from "../link/link.dto";
 
 export enum CampaignStatus {
   Active = 'active',
@@ -81,7 +83,8 @@ export class CampaignService {
     @Inject(EventRepository) private readonly eventRepository: EventRepository,
     @Inject(LeadRepository) private readonly leadRepository: LeadRepository,
     @Inject(UserRepository) private readonly userRepository: UserRepository,
-    @Inject(MessageGenerationProducer) private readonly messageGenerationProducer: MessageGenerationProducer
+    @Inject(MessageGenerationProducer) private readonly messageGenerationProducer: MessageGenerationProducer,
+    @Inject(LinkRepository) private readonly linkRepository: LinkRepository,
   ) { }
 
   async createCampaign(createCampaignDto: { name: string, goal: string, owner_id: number, urls: string[] }): Promise<CampaignCreationResponse> {
@@ -89,12 +92,25 @@ export class CampaignService {
       const { name, goal, urls, owner_id } = createCampaignDto;
       const saveCampaignToCoreDbRes = await this.campaignRepository.createCampaign({ name, goal, owner_id });
       const campaignId = saveCampaignToCoreDbRes.id;
-      // FIXME: handle the case when receive error from the scrapping service
+      // Create links. The default status is "pending". 
+      // In case we successfully scrape the link, status changes to "scrapped". In case scrapping service fails, status changes to "failed". In case link can't be scrapped, status changes to "can't scrapped".
+      const linkIdUrlMaps = await this.createLinks(campaignId, urls);
+      const linkIds = linkIdUrlMaps.map(link => link.linkId);
       const scrappingServiceAddress = this.configService.get<string>('SCRAPPING_SERVICE_ADDRESS');
       const scrappingServiceResponse = await axios.post(scrappingServiceAddress, {
-        urls,
+        link_id_url_maps_str: JSON.stringify(linkIdUrlMaps),
         campaign_id: campaignId
       });
+
+      if (scrappingServiceResponse.status !== 200) {
+        this.logger.error(`Error from scrapping service: ${scrappingServiceResponse.data}. Campaign ID: ${campaignId}, link IDs: ${linkIds}. Setting link statuses to "failed"`,
+          urls
+        );
+        
+        for (const linkId of linkIds) {
+          await this.linkRepository.updateLinkStatus(linkId, LinkStatus.Failed);
+        }
+      }
 
       return saveCampaignToCoreDbRes;
     } catch (error) {
@@ -104,7 +120,26 @@ export class CampaignService {
         status: CampaignCreationStatus.Error
       };
     }
-    
+  }
+
+  async createLinks(campaignId: number, urls: string[]) {
+    const linkIdUrlMaps: {linkId: number, linkUrl: string}[] = [];
+    for (const url of urls) {
+      const link = await this.linkRepository.createLink({ url, campaignId });
+
+      if (link.status === LinkCreationStatus.Error) {
+        this.logger.error(`Error creating link for campaign ${campaignId}: ${link.errorText}`);
+      } else {
+        this.logger.log(`Link created successfully for campaign ${campaignId}: ${link.id}`);
+
+        linkIdUrlMaps.push({
+          linkId: link.id,
+          linkUrl: url
+        });
+      }
+    }
+
+    return linkIdUrlMaps;
   }
 
   async getAllCampaigns(): Promise<Campaign[]> {

@@ -9,3 +9,5 @@ psycopg[binary]
 dotenv
 redis[hiredis]
 aioboto3
+langchain
+lxml

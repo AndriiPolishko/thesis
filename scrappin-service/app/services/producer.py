@@ -3,7 +3,7 @@ import logging
 import aioboto3
 import uuid
 
-from config import SQS_EMBEDDING_QUEUE_URL, AWS_REGION
+from config.config import SQS_EMBEDDING_QUEUE_URL, AWS_REGION
 
 logging.basicConfig(level=logging.INFO)
 
@@ -24,8 +24,6 @@ class SQSproducer:
                 QueueUrl=SQS_EMBEDDING_QUEUE_URL,
                 MessageBody=json.dumps(message),
                 MessageGroupId=f"chunk-to-embed",
-                # Unique ID to avoid duplication
-                # TODO: consider removing
                 MessageDeduplicationId=str(uuid.uuid4())
             )
             logging.info(f"✅ SQS message sent: {message}")

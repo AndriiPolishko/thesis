@@ -1,6 +1,6 @@
 from sentence_transformers import SentenceTransformer
 
-from config import EMBEDDING_MODEL_NAME
+from config.config import EMBEDDING_MODEL_NAME
 
 class Embedding:
   def __init__(self):

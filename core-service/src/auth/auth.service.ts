@@ -46,9 +46,6 @@ export class AuthService {
   async registerUser(createUserEntity: CreateUserEntity): Promise<{ user }> {
     try {
       const { accessToken, refreshToken, email } = createUserEntity;
-
-
-
       // TODO: Somehow handle for existing user
       const oauth2Client = new google.auth.OAuth2();
       oauth2Client.setCredentials({

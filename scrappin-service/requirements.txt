@@ -2,7 +2,7 @@ fastapi
 uvicorn[standard]
 beautifulsoup4
 nltk
-requests
+httpx
 xxhash
 sentence-transformers
 psycopg[binary]
@@ -11,3 +11,4 @@ redis[hiredis]
 aioboto3
 langchain
 lxml
+apscheduler

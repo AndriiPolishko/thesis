@@ -21,6 +21,7 @@ class ChunksConsumer:
       self.aioboto_session = aioboto3.Session()
       self.aws_region = AWS_REGION
       self.sqs_embedding_queue_url = SQS_EMBEDDING_QUEUE_URL
+      
 
     async def consume(self):
       """Consumes messages from SQS and processes URLs."""

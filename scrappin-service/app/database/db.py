@@ -35,6 +35,24 @@ class Database:
                 await self.conn.commit()
         except Exception as e:
             print(e)
+    
+    async def get_all_links(self):
+        """Fetches all links from the database."""
+        query = "SELECT * FROM link;"
+
+        try:
+            await self.connect()  # Ensure connection is available
+            async with self.conn.cursor() as cur:
+                await cur.execute(query)
+                
+                rows = await cur.fetchall()
+                columns = [desc[0] for desc in cur.description]
+
+                return [dict(zip(columns, row)) for row in rows]
+        except Exception as e:
+            print(e)
+        finally:
+            await self.close()
 
 # Create a global instance
 database = Database()

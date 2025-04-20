@@ -4,8 +4,8 @@ import json
 import random
 import httpx
 import asyncio
+import re
 from httpx import AsyncHTTPTransport
-from datetime import datetime
 from bs4 import BeautifulSoup
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -191,7 +191,10 @@ class ScrapingService:
       for tag in elements_to_remove:
           tag.decompose()
       
-      return soup.get_text()
+      text = soup.get_text(separator="\n", strip=True)
+      text = re.sub(r'\s+', ' ', text)
+    
+      return text
     except Exception as e:
       logging.error(f"Error converting HTML to text with BeautifulSoup. Error: {str(e)}")
       

@@ -39,7 +39,7 @@ class Database:
       except Exception as e:
         return False
     
-    async def retrieve_related_chunks(self, query_embedding: list, top_k: int = 25):
+    async def semantic_retrieval(self, query_embedding: list, top_k: int = 25):
         '''
         Retrieve chunks with the highest cosine similarity to the query_embedding.
         '''
@@ -47,7 +47,7 @@ class Database:
             await self.connect()
         
         # Ensure the embedding is a list of floats
-        query_embedding = np.array(query_embedding).tolist()[0]
+        query_embedding = list(query_embedding)
         
         query = """
         SELECT chunk, embedding
@@ -64,5 +64,31 @@ class Database:
         except Exception as e:
             print(f"Error retrieving related chunks: {e}")
             return []
+    
+    async def key_word_retrieval(self, query: str, top_k: int = 25):
+      """Performs a keyword search using the query and returns the top_k results."""
+  
+      sql = """
+      SELECT chunk
+      FROM chunk
+      WHERE text_search_vector @@ plainto_tsquery('english', %s)
+      LIMIT %s;
+      """
+      
+      params = (query, top_k)
+      
+      try:
+        async with self.conn.cursor() as cursor:
+          await cursor.execute(sql, params)
+          rows = await cursor.fetchall()
+          
+          # Return just the list of chunks
+          return [row[0] for row in rows]
+      except Exception as e:
+        print(f"Error performing keyword search: {e}")
+        
+        self.conn.rollback()
+        
+        return None
       
 database = Database()

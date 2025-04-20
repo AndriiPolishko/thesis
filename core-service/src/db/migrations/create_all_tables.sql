@@ -84,3 +84,11 @@ CREATE TABLE event (
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ
 );
+
+CREATE TABLE chunk (
+  id           SERIAL PRIMARY KEY,
+  chunk_hash   TEXT    NOT NULL,
+  chunk        TEXT    NOT NULL,
+  embedding    VECTOR(1536),
+  link_id      INTEGER
+);

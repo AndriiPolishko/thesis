@@ -5,7 +5,6 @@ import logging
 
 from config import AWS_REGION, SQS_GENERATED_MESSAGE_QUEUE_URL
 
-
 class EmailProducer:
     def __init__(self):
         self.session = aioboto3.Session()

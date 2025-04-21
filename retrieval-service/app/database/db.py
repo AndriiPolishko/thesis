@@ -1,5 +1,4 @@
 import psycopg as pg
-import numpy as np
 
 from config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
 
@@ -50,8 +49,8 @@ class Database:
         query_embedding = list(query_embedding)
         
         query = """
-        SELECT chunk, embedding
-        FROM embedding
+        SELECT chunk
+        FROM chunk
         ORDER BY embedding <#> %s::vector
         LIMIT %s;
         """
@@ -60,7 +59,8 @@ class Database:
             async with self.conn.cursor() as cursor:
                 await cursor.execute(query, (query_embedding, top_k))
                 rows = await cursor.fetchall()
-                return rows
+                
+                return [row[0] for row in rows]
         except Exception as e:
             print(f"Error retrieving related chunks: {e}")
             return []

@@ -27,16 +27,26 @@ class Database:
         if self.conn is None:
           await self.connect()
             
-        query = "INSERT INTO embedding (link_id, chunk, embedding) VALUES (%s, %s, %s)"
+        query = '''INSERT INTO chunk (link_id, chunk, embedding, text_search_vector) 
+        VALUES (%(link_id)s, 
+        %(chunk)s, 
+        %(embedding)s, 
+        to_tsvector('english', %(chunk)s)
+        );'''
+        params = {
+          "chunk": chunk,
+          "embedding": embedding.tolist(),
+          "link_id": link_id
+        }
         
-        embedding_list = embedding.tolist()
-        
-        await self.conn.execute(query, (link_id, chunk, embedding_list))
+        await self.conn.execute(query, params)
         
         await self.conn.commit()
         
         return True
       except Exception as e:
+        await self.conn.rollback()
+        
         return False
 
     async def find_chunk_by_hash(self, chunk_hash):

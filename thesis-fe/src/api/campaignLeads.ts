@@ -24,5 +24,11 @@ export const campaignLeadsService = {
     );
 
     return response.data
-  }
+  },
+  removeCampaignLead: async (campaignLeadId: number) => {
+    const removeCampaignLeadUrl = `${baseApiUrl}/campaign-lead/${campaignLeadId}`;
+    const response = await axios.delete(removeCampaignLeadUrl, { withCredentials: true });
+
+    return response.data;
+  },
 };

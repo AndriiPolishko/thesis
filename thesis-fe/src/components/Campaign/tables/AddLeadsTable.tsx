@@ -10,44 +10,25 @@ import {
   Checkbox,
   Button,
   VStack,
-  useToast
 } from '@chakra-ui/react'
 
-import { leadService } from '../../../api/leadService'
 import { Lead } from '../../Lead/lead.types'
 
 interface AddLeadsTableProps {
   onLeadsAdd: (selectedLeads: Lead[]) => void;
-  campaignId: number;
+  fetchLeads: () => Promise<void>;
+  leads: Lead[];
 }
 export function AddLeadsTable(params: AddLeadsTableProps) {
-  const { onLeadsAdd, campaignId } = params
+  const { onLeadsAdd, fetchLeads, leads } = params
   const [selectedLeads, setSelectedLeads] = useState<Lead[]>([])
-  const [leads, setLeads] = useState<Lead[]>([])
-  const toast = useToast();
   
   const handleSubmit = () => {
     onLeadsAdd(selectedLeads)
     setSelectedLeads([])
   }
+  
 
-  const fetchLeads = async () => {
-    try {
-      // Pass 0 for both page and size to get all leads
-      const data = await leadService.getLeads({ page: 0, size: 0, campaignId });
-
-      setLeads(data.leads);
-    } catch (error: any) {
-      toast({
-        title: 'Failed to load leads.',
-        description: error?.message || 'Something went wrong while fetching leads.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-        position: 'top-right',
-      });
-    }
-  };
 
   useEffect(() => {
     fetchLeads();

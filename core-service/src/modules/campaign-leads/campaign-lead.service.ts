@@ -47,4 +47,16 @@ export class CampaignLeadService {
       return {status: 'error'};
     }
   }
+
+  public async removeCampaignLead({ userId, campaignLeadId }: { userId: number; campaignLeadId: number }) {
+    try {
+      const result = await this.campaignLeadRepository.removeCampaignLead(campaignLeadId);
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Error on removing campaign lead ${campaignLeadId}`, error);
+
+      return { status: 'error' };
+    }
+  }
 }

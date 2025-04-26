@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Request, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Post, Request, UseGuards } from "@nestjs/common";
 
 import { CampaignLeadService } from "./campaign-lead.service";
 import { AuthGuard } from "@nestjs/passport";
@@ -27,6 +27,17 @@ export class CampaignLeadController {
     const { campaignId, leadIds } = body;
 
     const result = await this.campaignLeadService.addCampaignLeads({ userId, campaignId, leadIds });
+
+    return result;
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete("/:campaignLeadId")
+  async removeCampaignLead(@Request() req) {
+    const { campaignLeadId } = req.params;
+    const userId = req?.user?.id;
+
+    const result = await this.campaignLeadService.removeCampaignLead({ userId, campaignLeadId });
 
     return result;
   }

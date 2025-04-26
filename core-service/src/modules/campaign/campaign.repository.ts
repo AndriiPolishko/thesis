@@ -44,19 +44,21 @@ export class CampaignRepository {
   }
 
   async getCampaigns(page: number, size: number) {
-    const query = `
-      SELECT * FROM campaign
-      LIMIT $1 OFFSET $2`;
-    
     try {
-      const result = await this.databaseService.runQuery(query, [size, (Number(page) - 1) * size]);
-      const campaigns: Campaign[] = result.rows;
+      let query = `SELECT * FROM campaign`;
+      const params: Array<number> = [];
   
+      // If both page and size are provided and greater than zero, apply pagination
+      if (page > 0 && size > 0) {
+        query += ` LIMIT $1 OFFSET $2`;
+        params.push(size, (page - 1) * size);
+      }
+  
+      const result = await this.databaseService.runQuery(query, params);
+      const campaigns: Campaign[] = result.rows;
       return campaigns;
-    }
-    catch (error) {
+    } catch (error) {
       this.logger.error('Error fetching campaigns', error);
-
       return [];
     }
   }

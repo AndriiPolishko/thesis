@@ -351,7 +351,7 @@ export class CampaignService {
 
       await this.eventRepository.createEvent(incomingData);
 
-      if (maxCategory === EmailType["Opt-out"]) {
+      if (maxCategory === EmailType.Optout) {
         this.logger.log(`Detected opt-out email for user ${userId}. Marking lead as opt-out`);
         
         await this.leadRepository.updateLeadStatus(lead_id, LeadStatus.OptOut);
@@ -410,7 +410,8 @@ export class CampaignService {
           role: 'system',
           content: `
 You are a email thread analizator. As input you accept the two email threads <current_thread> and <previous_thread>.
-You need to output the messages that appear in the <current_thread> and don't appear in the <previous_thread>. Output that difference in the <diff> tag.
+You need to output the messages that appear in the <current_thread> and don't appear in the <previous_thread>. ANALYZE semantically and not by a direct comparison.
+Output that difference in the <diff> tag.
 Then based on the semantic context inside <diff>, get the highest message from the email thread inside <diff>
 
 Your output should have the following form:

@@ -45,7 +45,7 @@ export class AuthController {
   @Get('callback')
   @UseGuards(GoogleAuthGuard)
   async redirect(@Req() req, @Res() res) {
-    const { user } = req.user;
+    const user = req.user;
     const {accessToken} = await this.authService.login(user);
 
     res.cookie('access_token', accessToken, {
@@ -55,7 +55,7 @@ export class AuthController {
       // sameSite: 'none',
       path: '/',
       sameSite: 'lax',
-      maxAge: 15 * 60 * 1000, // 15 min
+      maxAge: 60 * 60 * 1000
     });
 
 

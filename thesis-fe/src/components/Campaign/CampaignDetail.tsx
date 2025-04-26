@@ -21,6 +21,8 @@ import { CenterSpinner } from '../Utils/CenterSpinner';
 import { CampaignStatus } from '../../api/campaignService';
 import { Lead } from '../Lead/lead.types';
 import { campaignLeadsService } from '../../api/campaignLeads';
+import { useEffect, useState } from 'react';
+import { leadService } from '../../api/leadService';
 
 type Campaign = {
   id: number
@@ -28,6 +30,15 @@ type Campaign = {
   goal: string
   status: CampaignStatus
 }
+
+export interface CampaignLead {
+  id: number;
+  status: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
 
 interface CampaignDetailProps {
   campaign: Campaign
@@ -48,6 +59,9 @@ export function CampaignDetail() {
     // prevent running if `id` is undefined
     enabled: !!campaignId, 
   });
+  const [campaignLeads, setCampaignLeads] = useState<CampaignLead[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([])
+
 
   const canChangeCampaignStatus = campaign?.status === CampaignStatus.Inactive || campaign?.status === CampaignStatus.Active;
   const changeCampaignStatusButtonText = 
@@ -70,7 +84,7 @@ export function CampaignDetail() {
 
   const addCampaignLeadMutation = useMutation({
     mutationFn: campaignLeadsService.addCampaignLeads,
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Campaign Created",
         description: "Your campaign has been successfully created.",
@@ -80,6 +94,8 @@ export function CampaignDetail() {
         position: "top-right"
       });
 
+      await fetchCampaignLeads();
+      await fetchLeads();
     },
     onError: (error) => {
       toast({
@@ -94,7 +110,9 @@ export function CampaignDetail() {
   });
   async function handleLeadsAdd(leads: Lead[]) {
     const leadIds = leads.map((lead) => lead.id);
-    addCampaignLeadMutation.mutate({ campaignId, leadIds });
+    await addCampaignLeadMutation.mutate({ campaignId, leadIds });
+
+    fetchLeads();
   }
 
   function chooseStatusColor(status: CampaignStatus) {
@@ -118,6 +136,45 @@ export function CampaignDetail() {
   function onBack() {
     navigate('/campaigns');
   }
+
+  const fetchCampaignLeads = async () => {
+    try {
+      const data = await campaignLeadsService.getCampaignLeads(campaignId);
+      setCampaignLeads(data.campaignLeads || []);
+    } catch (error) {
+      toast({
+        title: "Failed to campaign load leads.",
+        description: "Something went wrong while fetching campaign leads.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "top-right"
+      });
+    }
+  };
+
+  const fetchLeads = async () => {
+    try {
+      // Pass 0 for both page and size to get all leads
+      const data = await leadService.getLeads({ page: 0, size: 0, campaignId });
+
+      setLeads(data.leads);
+
+    } catch (error: any) {
+      toast({
+        title: 'Failed to load leads.',
+        description: error?.message || 'Something went wrong while fetching leads.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        position: 'top-right',
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchCampaignLeads();
+  }, [campaignId]);
 
   if (isLoading) {
     return <CenterSpinner />
@@ -167,11 +224,11 @@ export function CampaignDetail() {
         <Divider/>
         <VStack align="stretch" spacing={4}>
           <Heading size="md">Campaign Leads</Heading>
-          <CampaignLeadsTable campaignId={campaignId} />
+          <CampaignLeadsTable campaignLeads={campaignLeads} fetchCampaignLeads={fetchCampaignLeads} fetchLeads={fetchLeads}/>
         </VStack>
         <VStack align="stretch" spacing={4}>
           <Heading size="md">Add Leads</Heading>
-          <AddLeadsTable onLeadsAdd={handleLeadsAdd}  campaignId={campaignId}/>
+          <AddLeadsTable onLeadsAdd={handleLeadsAdd}  leads={leads} fetchLeads={fetchLeads}/>
         </VStack>
         <Divider />
         <VStack align="stretch" spacing={4}>

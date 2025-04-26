@@ -7,6 +7,7 @@ import { GmailClientUtil } from "./utils/gmail-client.util";
 import { LeadRepository } from "../lead/lead.repository";
 import { CampaignLeadRepository } from "../campaign-leads/campaign-lead.repository";
 import {GeneratedEmailMessage } from '../queue/queue.types'
+import { LeadStatus } from "../lead/lead.types";
 
 @Injectable()
 export class MessageService {
@@ -25,6 +26,14 @@ export class MessageService {
     try {
       const campaign = await this.campaignRepo.findById(campaign_id);
       const userId = campaign.user_id;
+      const lead = await this.leadRepo.findById(lead_id);
+
+      if (!lead || lead.status === LeadStatus.OptOut) {
+        this.logger.error(`Lead ${lead_id} is not valid or opted out. Skipping send email`);
+
+        return;
+      }
+
       let token = await this.tokenRepo.findByUserId(userId);
 
       if (!token) {

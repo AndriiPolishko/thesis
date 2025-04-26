@@ -90,4 +90,20 @@ export class CampaignLeadRepository {
       this.logger.error(`Error updating status for campaign lead ${campaignLeadId} to ${status}`, error);
     }
   }
+
+  public async removeCampaignLead(campaignLeadId: number): Promise<void> {
+    const query = `
+      DELETE FROM campaign_lead
+      WHERE id = $1;
+    `;
+    const values = [campaignLeadId];
+
+    try {
+      await this.databaseService.runQuery(query, values);
+      
+      this.logger.log(`Successfully removed campaign lead ${campaignLeadId}`);
+    } catch (error) {
+      this.logger.error(`Error removing campaign lead ${campaignLeadId}`, error);
+    }
+  }
 }

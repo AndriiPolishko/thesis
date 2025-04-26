@@ -25,7 +25,7 @@ export class AuthService {
     @Inject(IntegrationTokenRepository) private readonly integrationTokenRepository: IntegrationTokenRepository,
     @Inject(ConfigService) private readonly configService: ConfigService,
     @Inject(JwtService) private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async login(user: User) {
     const payload = { email: user.email, sub: user.id };
@@ -42,7 +42,7 @@ export class AuthService {
     }
   }
 
-  async registerUser(createUserEntity: CreateUserEntity): Promise<{ user }> {
+  async registerUser(createUserEntity: CreateUserEntity): Promise<User | null> {
     try {
       const { accessToken, refreshToken, email } = createUserEntity;
       const existingUser = await this.userRepository.findOneByEmail(email);
@@ -57,7 +57,7 @@ export class AuthService {
           });
           const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
           const googleProjectId = this.configService.get('GOOGLE_PROJECT_ID');
-      
+
           const watchResponse = await gmail.users.watch({
             userId: 'me',
             requestBody: {
@@ -70,11 +70,11 @@ export class AuthService {
           const { historyId: history_id, expiration: webhookExpirationTimestamp } = watchResponseData;
           const webhookExpiresAt = new Date(Number(webhookExpirationTimestamp));
           this.logger.log(`Creating new integration token for user ${existingUser.id} with email ${email}`);
-  
+
           await this.registerIntegrationToken(existingUser.id, accessToken, refreshToken, email, webhookExpiresAt, history_id);
         }
 
-        return { user: existingUser };
+        return existingUser;
       }
 
       const oauth2Client = new google.auth.OAuth2();
@@ -83,7 +83,7 @@ export class AuthService {
       });
       const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
       const googleProjectId = this.configService.get('GOOGLE_PROJECT_ID');
-  
+
       const watchResponse = await gmail.users.watch({
         userId: 'me',
         requestBody: {
@@ -96,25 +96,25 @@ export class AuthService {
       const { historyId: history_id, expiration: webhookExpirationTimestamp } = watchResponseData;
       const webhookExpiresAt = new Date(Number(webhookExpirationTimestamp));
       const newUser = await this.userRepository.createOne(createUserEntity);
-      
+
       // Check if integration token already exists
       const existingIntegrationToken = await this.integrationTokenRepository.findByEmail(email);
 
       if (!existingIntegrationToken) {
-        this.logger.log(`Creating new integration token for user ${newUser.user.id} with email ${email}`);
+        this.logger.log(`Creating new integration token for user ${newUser.id} with email ${email}`);
 
-        await this.registerIntegrationToken(newUser.user.id, accessToken, refreshToken, email, webhookExpiresAt, history_id);
+        await this.registerIntegrationToken(newUser.id, accessToken, refreshToken, email, webhookExpiresAt, history_id);
       }
 
-      return { user: newUser };
+      return newUser;
     } catch (error) {
       this.logger.error('Error registering user', { error });
-      
+
       return null;
     }
   }
 
-  async registerIntegrationToken(userId: number, access_token: string, refreshToken: string, email: string, webhookExpiresAt: Date, history_id: string, expiresAt?: Date ) {
+  async registerIntegrationToken(userId: number, access_token: string, refreshToken: string, email: string, webhookExpiresAt: Date, history_id: string, expiresAt?: Date) {
     const createIntegrationTokenEntity = {
       userId,
       access_token,

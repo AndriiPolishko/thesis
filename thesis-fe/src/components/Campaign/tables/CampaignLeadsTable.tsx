@@ -1,44 +1,47 @@
 import { useEffect, useState } from 'react';
-import { Table, Thead, Tbody, Tr, Th, Td, Box, Badge, useToast } from '@chakra-ui/react';
+import { Table, Thead, Tbody, Tr, Th, Td, Box, Badge, useToast, IconButton, CloseButton } from '@chakra-ui/react';
+// import { CloseIcon } from '@chakra-ui/icons';
+
 import { campaignLeadsService } from '../../../api/campaignLeads';
+import { CampaignLead } from '../CampaignDetail';
 
 
-interface CampaignLead {
-  id: number;
-  status: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-}
 
 interface CampaignLeadsTableProps {
-  campaignId: number;
+  campaignLeads: CampaignLead[];
+  fetchCampaignLeads: () => Promise<void>;
+  fetchLeads: () => Promise<void>;
 }
 
-export function CampaignLeadsTable({ campaignId }: CampaignLeadsTableProps) {
-  const [campaignLeads, setCampaignLeads] = useState<CampaignLead[]>([]);
+export function CampaignLeadsTable({ campaignLeads, fetchCampaignLeads, fetchLeads }: CampaignLeadsTableProps) {
   const toast = useToast();
 
-  useEffect(() => {
-    fetchLeads();
-  }, [campaignId]);
-
-  const fetchLeads = async () => {
+  async function handleRemoveCampaignLead(campaignLeadId: number) {
     try {
-      const data = await campaignLeadsService.getCampaignLeads(campaignId);
-      setCampaignLeads(data.campaignLeads || []);
-    } catch (error) {
+      await campaignLeadsService.removeCampaignLead(campaignLeadId);
       toast({
-        title: "Failed to campaign load leads.",
-        description: "Something went wrong while fetching campaign leads.",
+        title: "Lead removed",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right"
+      });
+      await fetchCampaignLeads();
+      await fetchLeads();
+  
+      // Option B: optimistic UI
+      // setCampaignLeads(current => current.filter(l => l.id !== campaignLeadId));
+    } catch (err) {
+      toast({
+        title: "Failed to remove lead.",
+        description: "Something went wrong.",
         status: "error",
         duration: 5000,
         isClosable: true,
         position: "top-right"
       });
     }
-  };
-
+  }
   return (
     <Box borderWidth="1px" borderRadius="lg" bg="white" overflow="hidden" p={4}>
       <Table variant="simple" size="sm">
@@ -48,6 +51,7 @@ export function CampaignLeadsTable({ campaignId }: CampaignLeadsTableProps) {
             <Th>Last Name</Th>
             <Th>Email</Th>
             <Th>Status</Th>
+            <Th>Action</Th>
           </Tr>
         </Thead>
         <Tbody>
@@ -58,9 +62,14 @@ export function CampaignLeadsTable({ campaignId }: CampaignLeadsTableProps) {
               <Td>{campaignLead?.last_name}</Td>
               <Td>{campaignLead?.email}</Td>
               <Td>
-                <Badge colorScheme={campaignLead.status === 'Engaged' ? 'green' : 'yellow'}>
+                <Badge 
+                className='width-[100px]'
+                colorScheme={campaignLead.status === 'booked' ? 'green' : 'yellow'}>
                   {campaignLead.status}
                 </Badge>
+              </Td>
+              <Td>
+                <CloseButton onClick={() => handleRemoveCampaignLead(campaignLead.id)}/>
               </Td>
             </Tr>
             );

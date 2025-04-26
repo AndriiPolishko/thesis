@@ -23,6 +23,8 @@ import { Lead } from '../Lead/lead.types';
 import { campaignLeadsService } from '../../api/campaignLeads';
 import { useEffect, useState } from 'react';
 import { leadService } from '../../api/leadService';
+import { linkService } from '../../api/link';
+import { CampaignLinksTable } from './tables/CampaignLinksTable';
 
 export interface CampaignLead {
   id: number;
@@ -30,6 +32,20 @@ export interface CampaignLead {
   first_name: string;
   last_name: string;
   email: string;
+}
+
+export enum LinkStatus {
+  Pending = 'pending',
+  Failed = 'failed',
+  Scrapped = 'scrapped',
+  CantBeScrapped = 'cant_be_scrapped',
+}
+
+export interface CampaignLink  {
+  id: number;
+  url: string;
+  status: LinkStatus;
+  last_scraped_at: Date | null;
 }
 
 export function CampaignDetail() {
@@ -49,7 +65,7 @@ export function CampaignDetail() {
   });
   const [campaignLeads, setCampaignLeads] = useState<CampaignLead[]>([]);
   const [leads, setLeads] = useState<Lead[]>([])
-
+  const [links, setLinks] = useState<CampaignLink[]>([]);
 
   const canChangeCampaignStatus = campaign?.status === CampaignStatus.Inactive || campaign?.status === CampaignStatus.Active;
   const changeCampaignStatusButtonText = 
@@ -62,11 +78,9 @@ export function CampaignDetail() {
     mutationFn: (params: { campaignId: number, newStatus: CampaignStatus }) => 
       campaignService.changeCampaignStatus(params),
     onSuccess: () => {
-      // oast({ title: 'Status updated', status: 'success' });
-      refetch(); // ✅ refetch updated campaign
+      refetch();
     },
     onError: () => {
-      // toast({ title: 'Failed to update status', status: 'error' });
     }
   });
 
@@ -160,8 +174,26 @@ export function CampaignDetail() {
     }
   };
 
+  const fetchLinks = async () => {
+    try {
+      const data = await linkService.getLinksByCampaignId(campaignId);
+
+      setLinks(data.links);
+    } catch (error: any) {
+      toast({
+        title: 'Failed to load campaign links',
+        description: error?.message || 'Something went wrong while fetching campaign links',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        position: 'top-right',
+      });
+    }
+  }
+
   useEffect(() => {
     fetchCampaignLeads();
+    fetchLinks();
   }, [campaignId]);
 
   if (isLoading) {
@@ -217,6 +249,11 @@ export function CampaignDetail() {
         <VStack align="stretch" spacing={4}>
           <Heading size="md">Add Leads</Heading>
           <AddLeadsTable onLeadsAdd={handleLeadsAdd}  leads={leads} fetchLeads={fetchLeads}/>
+        </VStack>
+        <Divider />
+        <VStack align="stretch" spacing={4}>
+          <Heading size="md">Campaign Links</Heading>
+          <CampaignLinksTable links={links} />
         </VStack>
         <Divider />
         <VStack align="stretch" spacing={4}>

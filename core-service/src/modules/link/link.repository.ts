@@ -63,4 +63,19 @@ export class LinkRepository {
       return [];
     }
   }
+
+  async getCampaignLinks(campaignId: number): Promise<{ id: number; url: string; status: LinkStatus, last_scraped_at: Date | null }[]> {
+    const query = `
+      SELECT id, url, status, last_scraped_at FROM link WHERE campaign_id = $1`;
+
+    try {
+      const result = await this.databaseService.runQuery(query, [campaignId]);
+      const links = result.rows;
+
+      return links;
+    } catch (error) {
+      this.logger.error(`Error fetching links for campaign ID ${campaignId}: ${error.message}`);
+      return [];
+    }
+  }
 }

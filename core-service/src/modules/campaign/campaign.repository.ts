@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+import { Logger } from "@nestjs/common";
 
 import { DatabaseService } from '../database/database.service';
 import { CampaignCreationResponse, CampaignCreationStatus, CreateCampaignEntity } from "./campaign.dto";
@@ -7,6 +8,8 @@ import { Campaign } from "./campaign.types";
 // TODO: rename methods according to the repository pattern
 @Injectable()
 export class CampaignRepository {
+  private readonly logger = new Logger(CampaignRepository.name);
+
   constructor(
     @Inject(DatabaseService) private readonly databaseService: DatabaseService
   ) {}
@@ -25,7 +28,7 @@ export class CampaignRepository {
         status: CampaignCreationStatus.Success
       };
     } catch (error) {
-      console.log('error: ', error)
+      this.logger.error('Error creating campaign', error);
 
       return {
         status: CampaignCreationStatus.Error,
@@ -45,11 +48,18 @@ export class CampaignRepository {
     const query = `
       SELECT * FROM campaign
       LIMIT $1 OFFSET $2`;
+    
+    try {
+      const result = await this.databaseService.runQuery(query, [size, (Number(page) - 1) * size]);
+      const campaigns: Campaign[] = result.rows;
+  
+      return campaigns;
+    }
+    catch (error) {
+      this.logger.error('Error fetching campaigns', error);
 
-    const result = await this.databaseService.runQuery(query, [size, (Number(page) - 1) * size]);
-    const campaigns: Campaign[] = result.rows;
-
-    return campaigns;
+      return [];
+    }
   }
 
   async getTotalCampaigns() {
@@ -64,10 +74,16 @@ export class CampaignRepository {
       SELECT * FROM campaign
       WHERE id = $1`;
 
-    const result = await this.databaseService.runQuery(query, [campaignId]);
-    const campaign: Campaign = result.rows[0];
+    try {
+      const result = await this.databaseService.runQuery(query, [campaignId]);
+      const campaign: Campaign = result.rows[0];
+  
+      return campaign;
+    } catch (error) {
+      this.logger.error('Error fetching campaign', error);
 
-    return campaign;
+      return null;
+    }
   }
 
   async activate(campaignId: number) {
@@ -77,10 +93,16 @@ export class CampaignRepository {
       WHERE id = $1
       RETURNING *`;
 
-    const result = await this.databaseService.runQuery(query, [campaignId]);
-    const campaign: Campaign = result.rows[0];
+    try {
+      const result = await this.databaseService.runQuery(query, [campaignId]);
+      const campaign: Campaign = result.rows[0];
+  
+      return campaign;
+    } catch (error) {
+      this.logger.error('Error activating campaign', error);
 
-    return campaign;
+      return null;
+    }
   }
 
   async deactivate(campaignId: number) {
@@ -89,11 +111,17 @@ export class CampaignRepository {
       SET status = 'inactive'
       WHERE id = $1
       RETURNING *`;
+    
+    try {
+      const result = await this.databaseService.runQuery(query, [campaignId]);
+      const campaign: Campaign = result.rows[0];
+  
+      return campaign;
+    } catch (error) {
+      this.logger.error('Error deactivating campaign', error);
 
-    const result = await this.databaseService.runQuery(query, [campaignId]);
-    const campaign: Campaign = result.rows[0];
-
-    return campaign;
+      return null;
+    }
   }
 
   async findById(campaignId: number | string): Promise<Campaign> {
@@ -101,9 +129,15 @@ export class CampaignRepository {
       SELECT * FROM campaign
       WHERE id = $1`;
 
-    const result = await this.databaseService.runQuery(query, [campaignId]);
-    const campaign: Campaign = result.rows[0];
+    try {
+      const result = await this.databaseService.runQuery(query, [campaignId]);
+      const campaign: Campaign = result.rows[0];
+  
+      return campaign;
+    } catch (error) {
+      this.logger.error('Error fetching campaign by ID', error);
 
-    return campaign;
+      return null;
+    }
   }
 }

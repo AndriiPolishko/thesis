@@ -71,11 +71,11 @@ export class CampaignService {
 
   private gmailApiUrl = 'https://gmail.googleapis.com'
 
-  private readonly emailGenerationTopicName = 'email-generation';
-
   private readonly openaiApiKey = this.configService.get<string>('OPENAI_API_KEY');
 
   private readonly chatCompletionsUrl = 'https://api.openai.com/v1/chat/completions';
+
+  private readonly openaiModel = 'gpt-4.1-mini-2025-04-14'
 
   private readonly messageGenerationGroupId = 'message_generation_group_id';
 
@@ -97,23 +97,30 @@ export class CampaignService {
       const { name, goal, urls, owner_id } = createCampaignDto;
       const saveCampaignToCoreDbRes = await this.campaignRepository.createCampaign({ name, goal, owner_id });
       const campaignId = saveCampaignToCoreDbRes.id;
+
+      this.logger.log(`Campaign for user ${owner_id} created successfully with ID: ${campaignId}`);
+      this.logger.log(`Start creating links for campaign ${campaignId} with URLs: ${urls}`);
+
       // Create links. The default status is "pending". 
       // In case we successfully scrape the link, status changes to "scrapped". In case scrapping service fails, status changes to "failed". In case link can't be scrapped, status changes to "can't scrapped".
       const linkIdUrlMaps = await this.createLinks(campaignId, urls);
+
+      this.logger.log(`Links created successfully for campaign ${campaignId}`, {
+        linkIds: linkIdUrlMaps.map(link => link.linkId)
+      });
+
       const linkIds = linkIdUrlMaps.map(link => link.linkId);
       const scrappingServiceAddress = this.configService.get<string>('SCRAPPING_SERVICE_ADDRESS');
 
-      console.log('reqest data: ', {
-        link_id_url_maps_str: JSON.stringify(linkIdUrlMaps),
-        campaign_id: Number(campaignId)
-      });
+      this.logger.log(`Sending request to scrapping service: ${scrappingServiceAddress} with link IDs: ${linkIds} and campaign ID: ${campaignId}`);
 
       const scrappingServiceResponse = await axios.post(scrappingServiceAddress, {
         link_id_url_maps_str: JSON.stringify(linkIdUrlMaps),
         campaign_id: Number(campaignId)
       });
+      const scrappingServiceResponseStatus = scrappingServiceResponse.status;
 
-      if (scrappingServiceResponse.status.toString()[0] !== '2') {
+      if (scrappingServiceResponseStatus < 200 || scrappingServiceResponseStatus >= 300) {
         this.logger.error(`Error from scrapping service: ${scrappingServiceResponse.data}. Campaign ID: ${campaignId}, link IDs: ${linkIds}. Setting link statuses to "failed"`,
           urls
         );
@@ -125,7 +132,7 @@ export class CampaignService {
 
       return saveCampaignToCoreDbRes;
     } catch (error) {
-      console.log('error: ', error)
+      this.logger.error(`Error creating campaign: ${error.message}`, error);
 
       return {
         status: CampaignCreationStatus.Error
@@ -152,7 +159,7 @@ export class CampaignService {
 
     return linkIdUrlMaps;
   }
-
+q
   async getAllCampaigns(): Promise<Campaign[]> {
     return this.campaignRepository.getAllCampaigns();
   }
@@ -241,9 +248,6 @@ export class CampaignService {
     }
 
     let historyDetails = await this.getHistoryDetails({ email: userEmail, historyId: startHistoryId, accessToken: access_token });
-
-    console.log("History details: ", historyDetails);
-
     const newMessageIds = [];
 
     // Important: Update the stored history ID even if there are no changes
@@ -278,12 +282,8 @@ export class CampaignService {
 
     for (const messageId of newMessageIds) {
       const messageDetails = await this.getMessageDetails({ email: userEmail, messageId, accessToken: access_token });
-
-      console.log("Received message details: ", messageDetails);
-
       // Check that events with thread_id are present in the database
       // We need this check to reply only to the messages that were sent from the app
-      // TODO: NOTE: maybe problem is here
       const existingEvents = await this.eventRepository.getEventByThreadId(messageDetails.threadId);
 
       if (!existingEvents) {
@@ -385,7 +385,7 @@ export class CampaignService {
    */
   private async getTheLastMessageFromTheThread(emailThread: string, previousThread: string): Promise<string> {
     const response = await axios.post(this.chatCompletionsUrl, {
-      model: 'gpt-4.1-mini-2025-04-14',
+      model: this.openaiModel,
       messages: [
         {
           role: 'system',
@@ -439,7 +439,7 @@ ${previousThread}
    */
   private async detectEmailType(email: string): Promise<string> {
     const response = await axios.post(this.chatCompletionsUrl, {
-      model: 'gpt-4.1-mini-2025-04-14',
+      model: this.openaiModel,
       messages: [
         {
           role: 'system',
@@ -496,7 +496,9 @@ Messages that ask to unsubscribe, cancel or other ways to ask not to message the
     // First, check if the top-level body has content (no parts)
     if (payload.body?.data) {
       const decoded = this.decodeBase64Url(payload.body.data);
-      console.log("Decoded message (top-level):", decoded);
+
+      this.logger.log("Decoded message (top-level body):", decoded);
+
       return decoded;
     }
   
@@ -509,7 +511,9 @@ Messages that ask to unsubscribe, cancel or other ways to ask not to message the
     for (const part of parts) {
       if (part.mimeType === targetMime && part.body?.data) {
         const decoded = this.decodeBase64Url(part.body.data);
-        console.log("Decoded message (preferred MIME):", decoded);
+
+        this.logger.log("Decoded message (preferred MIME type):", decoded);
+
         return decoded;
       }
     }
@@ -518,7 +522,9 @@ Messages that ask to unsubscribe, cancel or other ways to ask not to message the
     for (const part of parts) {
       if (part.body?.data) {
         const decoded = this.decodeBase64Url(part.body.data);
-        console.log("Decoded message (fallback part):", decoded);
+        
+        this.logger.log("Decoded message (fallback):", decoded);
+
         return decoded;
       }
     }

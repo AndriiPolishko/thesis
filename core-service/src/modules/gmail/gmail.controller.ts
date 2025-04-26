@@ -1,10 +1,13 @@
 import { Body, Controller, Post, Inject, Res } from "@nestjs/common";
 import { Response } from "express";
+import { Logger } from "@nestjs/common";
 
 import { CampaignService } from "../campaign/campaign.service";
 
 @Controller("gmail")
 export class GmailController {
+  private readonly logger = new Logger(GmailController.name);
+
   constructor(
     @Inject(CampaignService) private readonly campaignService: CampaignService
   ) {}
@@ -21,13 +24,11 @@ export class GmailController {
       const { emailAddress, historyId } = data;
       
       res.status(200).send();
-      
-      console.log(`Received message for user ${emailAddress} with historyId: ${historyId}`);
 
       await this.campaignService.handleIncoming({ userEmail: emailAddress, history_id: historyId });
 
     } catch (error) {
-      console.error('Error processing webhook:', error);
+      this.logger.error('Error handling webhook', error);
     }
   }
   

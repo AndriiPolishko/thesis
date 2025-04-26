@@ -7,7 +7,6 @@ import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from '../user/user.repository';
 import { IntegrationTokenRepository } from 'src/modules/integrationToken/integration-token.repository';
 import { User } from 'src/modules/user/user.types';
-import { Request } from 'express';
 
 interface CreateUserEntity {
   firstName: string;
@@ -92,7 +91,7 @@ export class AuthService {
 
       return { user: newUser };
     } catch (error) {
-      console.error('Error registering user:', error);
+      this.logger.error('Error registering user', { error });
       
       return null;
     }

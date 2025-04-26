@@ -49,12 +49,10 @@ export class LeadRepository {
       const result = await this.databaseService.runQuery(query, [email, firstName, lastName, userId]);
 
       this.logger.log('Lead created successfully');
-      
-      console.log()
 
       return result.rows[0];
     } catch (error) {
-      console.log('error: ', error);
+      this.logger.error('Error creating lead', error);
 
       return null;
     }
@@ -74,17 +72,31 @@ export class LeadRepository {
           AND id NOT IN (
             SELECT lead_id FROM campaign_lead WHERE campaign_id = $2
           );`;
-        const result = await this.databaseService.runQuery(query, [userId, campaignId]);
-        const leads: Lead[] = result.rows;
-        
-        return leads;
+
+        try {
+          const result = await this.databaseService.runQuery(query, [userId, campaignId]);
+          const leads: Lead[] = result.rows;
+          
+          return leads;
+        } catch (error) {
+          this.logger.error('Error fetching leads', error);
+          
+          return [];
+        }
+
       }
 
-      const result = await this.databaseService.runQuery('SELECT * FROM lead WHERE user_id = $1', [userId]);
-      const leads: Lead[] = result.rows;
-      this.logger.log(`Total leads for user ${userId}: ${leads.length}`);
-
-      return leads;
+      try {
+        const result = await this.databaseService.runQuery('SELECT * FROM lead WHERE user_id = $1', [userId]);
+        const leads: Lead[] = result.rows;
+        this.logger.log(`Total leads for user ${userId}: ${leads.length}`);
+  
+        return leads;
+      } catch (error) {
+        this.logger.error('Error fetching leads', error);
+        
+        return [];
+      }
     }
 
     const query = `
@@ -93,10 +105,17 @@ export class LeadRepository {
       LIMIT $1 OFFSET $2;
       `;
     const offset = (page - 1) * size;
-    const result = await this.databaseService.runQuery(query, [size, offset, userId],);
-    const leads: Lead[] = result.rows;
 
-    return leads;
+    try {
+      const result = await this.databaseService.runQuery(query, [size, offset, userId],);
+      const leads: Lead[] = result.rows;
+  
+      return leads;
+    } catch (error) {
+      this.logger.error('Error fetching leads', error);
+      
+      return [];
+    }
   }
 
   /**
@@ -105,10 +124,16 @@ export class LeadRepository {
    * @returns
    */
   public async getTotalLeads(userId: number): Promise<number> {
-    const result = await this.databaseService.runQuery('SELECT COUNT(*) FROM lead WHERE user_id = $1', [userId]);
-    const totalLeads = Number(result.rows[0].count);
-
-    return totalLeads;
+    try {
+      const result = await this.databaseService.runQuery('SELECT COUNT(*) FROM lead WHERE user_id = $1', [userId]);
+      const totalLeads = Number(result.rows[0].count);
+  
+      return totalLeads;
+    } catch (error) {
+      this.logger.error('Error fetching total leads',  {userId, error});
+      
+      return 0;
+    }
   }
 
   /**
@@ -122,10 +147,16 @@ export class LeadRepository {
     const query = `
       SELECT * FROM lead WHERE id = $1 AND user_id = $2`;
 
-    const result = await this.databaseService.runQuery(query, [leadId, userId]);
-    const lead: Lead = result.rows[0];
-
-    return lead;
+    try {
+      const result = await this.databaseService.runQuery(query, [leadId, userId]);
+      const lead: Lead = result.rows[0];
+  
+      return lead;
+    } catch (error) {
+      this.logger.error('Error fetching lead by id', {params, error});
+      
+      return null;
+    }
   }
 
   /**
@@ -139,10 +170,16 @@ export class LeadRepository {
     const query = `
       SELECT * FROM lead WHERE email = $1 AND user_id = $2`;
 
-    const result = await this.databaseService.runQuery(query, [email, userId]);
-    const lead: Lead = result.rows[0];
-
-    return lead;
+    try{
+      const result = await this.databaseService.runQuery(query, [email, userId]);
+      const lead: Lead = result.rows[0];
+  
+      return lead; 
+    } catch (error) {
+      this.logger.error('Error fetching lead by email', {params, error});
+      
+      return null;
+    }
   }
 
   public async updateLeadStatus(leadId: number, status: string): Promise<void> {
@@ -155,7 +192,7 @@ export class LeadRepository {
       await this.databaseService.runQuery(query, values);
       this.logger.log(`Lead with ID ${leadId} updated to status ${status}`);
     } catch (error) {
-      this.logger.error(`Error updating lead with ID ${leadId}`, error);
+      this.logger.error(`Error updating lead with ID ${leadId}`, {values, error});
     }
   }
 }

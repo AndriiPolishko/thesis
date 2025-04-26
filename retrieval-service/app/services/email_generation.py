@@ -18,6 +18,7 @@ class EmailGenerationMessage(BaseModel):
   thread: Optional[str] = None
   last_message: Optional[str] = None
   message_id: Optional[str] = None
+  campaign_system_prompt: str
 
 class EmailGeneration():
   def __init__(self):
@@ -28,7 +29,7 @@ class EmailGeneration():
 
 
 
-  async def _generate_outgoing(self, first_name, last_name, campaign_goal) -> str:
+  async def _generate_outgoing(self, first_name, last_name, campaign_goal, campaign_system_prompt) -> str:
     '''
     Function to generate an outgoing email
     '''
@@ -43,6 +44,10 @@ class EmailGeneration():
         },
         {
             "role": "user",
+            "content": campaign_system_prompt
+        },
+        {
+            "role": "user",
             "content": user_outgoing_prompt
         }
     ])
@@ -52,7 +57,7 @@ class EmailGeneration():
     return generated_outgoing
   
 
-  async def _generate_reply(self, first_name, last_name, campaign_goal, thread, last_message, retrieved_info) -> str:
+  async def _generate_reply(self, first_name, last_name, campaign_goal, thread, last_message, retrieved_info, campaign_system_prompt) -> str:
     '''
     Function to generate a reply to an email
     '''
@@ -65,6 +70,10 @@ class EmailGeneration():
           {
               "role": "system",
               "content": reply_system_prompt
+          },
+          {
+              "role": "user",
+              "content": campaign_system_prompt
           },
           {
               "role": "user",
@@ -85,8 +94,9 @@ class EmailGeneration():
     campaign_goal = message.campaign_goal
     first_name = message.first_name
     last_name = message.last_name
+    campaign_system_prompt = message.campaign_system_prompt
     # Generated outgoing email
-    generated_outgoing = await self._generate_outgoing(first_name, last_name, campaign_goal)
+    generated_outgoing = await self._generate_outgoing(first_name, last_name, campaign_goal, campaign_system_prompt)
 
     send_email_payload = {
         "campaign_id": campaign_id,
@@ -112,10 +122,11 @@ class EmailGeneration():
     last_name = message.last_name
     message_id = message.message_id
     last_message = message.last_message
+    campaign_system_prompt = message.campaign_system_prompt
 
     retrieved_info = await retriever.retrieve(last_message, thread)
     # Generated reply email
-    generated_reply = await self._generate_reply(first_name, last_name, campaign_goal, thread, last_message, retrieved_info)
+    generated_reply = await self._generate_reply(first_name, last_name, campaign_goal, thread, last_message, retrieved_info, campaign_system_prompt)
     
     send_email_payload = {
       'campaign_id': campaign_id,

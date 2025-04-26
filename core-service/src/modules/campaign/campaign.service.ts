@@ -44,6 +44,7 @@ interface EmailGenerationQueueObject {
   thread_id?: string;
   message_id?: string;
   last_message?: string;
+  campaign_system_prompt: string;
 };
 
 interface HistoryMessageAddedItem {
@@ -93,10 +94,10 @@ export class CampaignService {
     @Inject(LinkRepository) private readonly linkRepository: LinkRepository,
   ) { }
 
-  async createCampaign(createCampaignDto: { name: string, goal: string, owner_id: number, urls: string[] }): Promise<CampaignCreationResponse> {
+  async createCampaign(createCampaignDto: { name: string, goal: string, owner_id: number, urls: string[], campaignSystemPrompt: string }): Promise<CampaignCreationResponse> {
     try {
-      const { name, goal, urls, owner_id } = createCampaignDto;
-      const saveCampaignToCoreDbRes = await this.campaignRepository.createCampaign({ name, goal, owner_id });
+      const { name, goal, urls, owner_id, campaignSystemPrompt } = createCampaignDto;
+      const saveCampaignToCoreDbRes = await this.campaignRepository.createCampaign({ name, goal, owner_id, campaignSystemPrompt });
       const campaignId = saveCampaignToCoreDbRes.id;
 
       this.logger.log(`Campaign for user ${owner_id} created successfully with ID: ${campaignId}`);
@@ -206,7 +207,8 @@ export class CampaignService {
         first_name: campaignLead.first_name,
         last_name: campaignLead.last_name,
         campaign_goal: campaignLead.campaign_goal,
-        type: EmailGenerationQueueObjectType.Outgoing
+        type: EmailGenerationQueueObjectType.Outgoing,
+        campaign_system_prompt: campaignLead.campaign_system_prompt,
       };
 
       await this.messageGenerationProducer.produce(emailGenerationQueueObject, this.messageGenerationGroupId);
@@ -379,7 +381,8 @@ export class CampaignService {
         thread_id: threadId,
         type: EmailGenerationQueueObjectType.Reply,
         message_id: messageIdHeader,
-        last_message: lastMessage
+        last_message: lastMessage,
+        campaign_system_prompt: relatedCampaign.campaign_system_prompt,
       };
 
       await this.messageGenerationProducer.produce(replyGenerationQueueObject, this.messageGenerationGroupId);

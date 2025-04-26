@@ -1,18 +1,16 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { 
-  Box, Button, FormControl, FormLabel, Input, Textarea, VStack, 
-  useDisclosure, Flex, Heading, useToast 
+  Box, Button, FormControl, FormLabel, Input, Textarea, VStack, Flex, Heading, useToast 
 } from "@chakra-ui/react";
-import { ChevronDown, ChevronUp, Upload } from "lucide-react";
 
 import { campaignService } from "../../api/campaignService";
 
 export function CampaignBlock() {
-  const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
   const [campaignName, setCampaignName] = useState("");
   const [campaignDescription, setCampaignDescription] = useState("");
   const [links, setLinks] = useState<string>("");
+  const [campaignSystemPrompt, setCampaignSystemPrompt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast(); // Chakra UI toast for notifications
   const mutation = useMutation({
@@ -32,6 +30,7 @@ export function CampaignBlock() {
       setCampaignName("");
       setCampaignDescription("");
       setLinks("");
+      setCampaignSystemPrompt("");
     },
     onError: (error) => {
       setIsSubmitting(false);
@@ -64,7 +63,7 @@ export function CampaignBlock() {
     const splittedLinks = links.split(', ').map(link => link.trim()).filter(link => link !== "");
 
     try {
-      mutation.mutate({ campaignName, campaignDescription, splittedLinks });
+      mutation.mutate({ campaignName, campaignDescription, splittedLinks, campaignSystemPrompt });
     } finally {
       setIsSubmitting(false);
     }
@@ -72,56 +71,57 @@ export function CampaignBlock() {
 
   return (
     <Box borderWidth="1px" borderRadius="lg" bg="white" p={6}>
-      <Flex justify="space-between" align="center" mb={isOpen ? 6 : 0} onClick={onToggle} cursor="pointer">
+      <Flex justify="space-between" align="center" mb={6} cursor="pointer">
         <Heading size="md" color="gray.700">
           Campaign Creation
         </Heading>
-        {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
       </Flex>
-      {isOpen && (
-        <VStack spacing={4} align="stretch">
-          <FormControl isRequired>
-            <FormLabel>Campaign Name</FormLabel>
-            <Input 
-              placeholder="Enter campaign name"
-              value={campaignName}
-              onChange={(e) => setCampaignName(e.target.value)}
-              isDisabled={isSubmitting}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Goal</FormLabel>
-            <Textarea 
-              placeholder="Enter campaign goal" rows={4} 
-              value={campaignDescription}
-              onChange={(e) => setCampaignDescription(e.target.value)}
-              isDisabled={isSubmitting}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Add Links</FormLabel>
-            <Textarea 
-              placeholder="Add URL to scrape (separate by comma)" rows={2} 
-              value={links}
-              onChange={(e) => setLinks(e.target.value)}
-              isDisabled={isSubmitting}
-            />
-          </FormControl>
-          <Flex gap={4}>
-            <Button leftIcon={<Upload size={16} />} variant="outline" flex="1" isDisabled={isSubmitting}>
-              Attach Files
-            </Button>
-          </Flex>
-          <Button
-            onClick={handleCreateCampaign}
-            colorScheme="blue"
-            size="md"
-            isLoading={isSubmitting} // Show loading state while submitting
-          >
-            Create Campaign
-          </Button>
-        </VStack>
-      )}
+      <VStack spacing={4} align="stretch">
+        <FormControl isRequired>
+          <FormLabel>Campaign Name</FormLabel>
+          <Input 
+            placeholder="Enter campaign name"
+            value={campaignName}
+            onChange={(e) => setCampaignName(e.target.value)}
+            isDisabled={isSubmitting}
+          />
+        </FormControl>
+        <FormControl>
+          <FormLabel>Goal</FormLabel>
+          <Textarea 
+            placeholder="Enter campaign goal" rows={4} 
+            value={campaignDescription}
+            onChange={(e) => setCampaignDescription(e.target.value)}
+            isDisabled={isSubmitting}
+          />
+        </FormControl>
+        <FormControl>
+          <FormLabel>Add Links</FormLabel>
+          <Textarea 
+            placeholder="Add URL to scrape (separate by comma)" rows={2} 
+            value={links}
+            onChange={(e) => setLinks(e.target.value)}
+            isDisabled={isSubmitting}
+          />
+        </FormControl>
+        <FormControl>
+          <FormLabel>Campaign system prompt</FormLabel>
+          <Textarea 
+            placeholder="Add system prompt for the campaign" rows={2} 
+            value={campaignSystemPrompt}
+            onChange={(e) => setCampaignSystemPrompt(e.target.value)}
+            isDisabled={isSubmitting}
+          />
+        </FormControl>
+        <Button
+          onClick={handleCreateCampaign}
+          colorScheme="blue"
+          size="md"
+          isLoading={isSubmitting}
+        >
+          Create Campaign
+        </Button>
+      </VStack>
     </Box>
   );
 }

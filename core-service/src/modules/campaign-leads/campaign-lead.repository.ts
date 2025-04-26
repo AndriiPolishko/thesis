@@ -27,7 +27,8 @@ export class CampaignLeadRepository {
       l.first_name,
       l.last_name,
       l.email,
-      c.goal AS campaign_goal
+      c.goal AS campaign_goal,
+      c.campaign_system_prompt AS campaign_system_prompt
       FROM "campaign_lead" cl
       JOIN "lead" l ON cl.lead_id = l.id
       JOIN "campaign" c ON cl.campaign_id = c.id

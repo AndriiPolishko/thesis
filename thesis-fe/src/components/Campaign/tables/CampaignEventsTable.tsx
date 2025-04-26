@@ -1,4 +1,4 @@
-import { Table, Thead, Tbody, Tr, Th, Td, Box, Badge } from '@chakra-ui/react'
+import { Table, Thead, Tbody, Tr, Th, Td, Box } from '@chakra-ui/react'
 
 import { eventService } from '../../../api/eventService';
 import { useEffect, useState } from 'react';

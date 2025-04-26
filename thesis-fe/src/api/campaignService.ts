@@ -6,6 +6,7 @@ interface CampaignCreationData {
   campaignName: string;
   campaignDescription: string;
   splittedLinks: string[];
+  campaignSystemPrompt: string;
 }
 
 interface GetCampaignsParams {
@@ -21,11 +22,12 @@ export enum CampaignStatus {
 export const campaignService = {
   createCampaign: async (params: CampaignCreationData) => {
     const campaignCreateUrl = `${baseApiUrl}/campaign/create`
-    const { campaignName, campaignDescription, splittedLinks } = params;
+    const { campaignName, campaignDescription, splittedLinks, campaignSystemPrompt } = params;
     const response = await axios.post(campaignCreateUrl, {
       name: campaignName,
       goal: campaignDescription,
       urls: splittedLinks,
+      campaignSystemPrompt
     }, { withCredentials: true });
 
     return response.data;

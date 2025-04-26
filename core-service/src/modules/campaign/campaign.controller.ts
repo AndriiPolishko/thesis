@@ -20,8 +20,8 @@ export class CampaignController {
   @UseGuards(AuthGuard('jwt'))
   async createCampaign(@Request() req, @Body() createCampaignDto: CreateCampaignDto): Promise<CampaignCreationResponse> {
     const userId = req?.user?.id;
-    const { name, goal, urls } = createCampaignDto;
-    const status = await this.campaignService.createCampaign({ name, goal, owner_id: userId, urls });
+    const { name, goal, urls, campaignSystemPrompt } = createCampaignDto;
+    const status = await this.campaignService.createCampaign({ name, goal, owner_id: userId, urls, campaignSystemPrompt });
 
     return status;
   }

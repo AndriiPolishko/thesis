@@ -8,7 +8,6 @@ import { CampaignDetail } from '../Campaign/CampaignDetail'
 import { LeadTable } from '../Lead/LeadTable'
 export function Navigation() {
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
-  const navigate = useNavigate();
 
   return (
     <Routes>
@@ -18,15 +17,10 @@ export function Navigation() {
         element={
           selectedCampaign ? (
             <CampaignDetail
-              campaign={selectedCampaign}
-              onBack={() => {
-                setSelectedCampaign(null)
-                navigate('/campaigns')
-              }}
             />
           ) : (
             <CampaignTable
-              onCampaignSelect={setSelectedCampaign}
+              
             />
           )
         }

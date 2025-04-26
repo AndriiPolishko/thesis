@@ -10,6 +10,7 @@ export interface Campaign {
   goal: string;
   user_id: number;
   status: CampaignStatus;
+  campaign_system_prompt: string;
   created_at?: Date;
   updated_at?: Date;
 }

@@ -24,13 +24,6 @@ import { campaignLeadsService } from '../../api/campaignLeads';
 import { useEffect, useState } from 'react';
 import { leadService } from '../../api/leadService';
 
-type Campaign = {
-  id: number
-  name: string
-  goal: string
-  status: CampaignStatus
-}
-
 export interface CampaignLead {
   id: number;
   status: string;
@@ -39,11 +32,6 @@ export interface CampaignLead {
   email: string;
 }
 
-
-interface CampaignDetailProps {
-  campaign: Campaign
-  onBack: () => void
-}
 export function CampaignDetail() {
   const navigate = useNavigate();
   const { id } = useParams();

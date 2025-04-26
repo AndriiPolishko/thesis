@@ -15,11 +15,11 @@ export class CampaignRepository {
 
   async createCampaign(createCampaignDto: CreateCampaignEntity): Promise<CampaignCreationResponse> {
     try {
-      const { name, goal, owner_id } = createCampaignDto;
+      const { name, goal, owner_id, campaignSystemPrompt } = createCampaignDto;
       const query = `
-        INSERT INTO campaign (name, goal, user_id) VALUES ($1, $2, $3) RETURNING id`;
+        INSERT INTO campaign (name, goal, user_id, campaign_system_prompt) VALUES ($1, $2, $3, $4) RETURNING id`;
 
-      const result = await this.databaseService.runQuery(query, [name, goal, owner_id]);
+      const result = await this.databaseService.runQuery(query, [name, goal, owner_id, campaignSystemPrompt]);
       const campaignId = Number(result.rows[0].id);
 
       return {

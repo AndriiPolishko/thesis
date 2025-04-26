@@ -1,11 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Table, Thead, Tbody, Tr, Th, Td, Box, Badge, useToast, IconButton, CloseButton } from '@chakra-ui/react';
-// import { CloseIcon } from '@chakra-ui/icons';
+import { Table, Thead, Tbody, Tr, Th, Td, Box, Badge, useToast, CloseButton } from '@chakra-ui/react';
 
 import { campaignLeadsService } from '../../../api/campaignLeads';
 import { CampaignLead } from '../CampaignDetail';
-
-
 
 interface CampaignLeadsTableProps {
   campaignLeads: CampaignLead[];
@@ -28,9 +24,6 @@ export function CampaignLeadsTable({ campaignLeads, fetchCampaignLeads, fetchLea
       });
       await fetchCampaignLeads();
       await fetchLeads();
-  
-      // Option B: optimistic UI
-      // setCampaignLeads(current => current.filter(l => l.id !== campaignLeadId));
     } catch (err) {
       toast({
         title: "Failed to remove lead.",
@@ -63,8 +56,14 @@ export function CampaignLeadsTable({ campaignLeads, fetchCampaignLeads, fetchLea
               <Td>{campaignLead?.email}</Td>
               <Td>
                 <Badge 
-                className='width-[100px]'
-                colorScheme={campaignLead.status === 'booked' ? 'green' : 'yellow'}>
+                colorScheme={campaignLead.status === 'booked' ? 'green' : 'orange'}
+                p="5px"
+                textAlign="center"
+                display="inline-flex"
+                alignItems="center"
+                justifyContent="center"
+                borderRadius="md"
+                >
                   {campaignLead.status}
                 </Badge>
               </Td>

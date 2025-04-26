@@ -12,7 +12,6 @@ export class MessageGenerationProducer {
     this.sqs = new SQSAdapter(this.configService.get<string>('SQS_MESSAGE_GENERATION_QUEUE_URL'));
   }
 
-  // TODO: add type
   async produce(message: any, groupId: string) {
     await this.sqs.sendMessage(message, groupId);
   }

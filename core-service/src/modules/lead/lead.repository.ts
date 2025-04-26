@@ -142,18 +142,17 @@ export class LeadRepository {
    * @param userId
    * @returns
    */
-  public async findById(params: GetLeadByIdParams): Promise<Lead> {
-    const { leadId, userId } = params;
+  public async findById(leadId: number): Promise<Lead> {
     const query = `
-      SELECT * FROM lead WHERE id = $1 AND user_id = $2`;
+      SELECT * FROM lead WHERE id = $1 `;
 
     try {
-      const result = await this.databaseService.runQuery(query, [leadId, userId]);
+      const result = await this.databaseService.runQuery(query, [leadId]);
       const lead: Lead = result.rows[0];
   
       return lead;
     } catch (error) {
-      this.logger.error('Error fetching lead by id', {params, error});
+      this.logger.error('Error fetching lead by id', {leadId, error});
       
       return null;
     }

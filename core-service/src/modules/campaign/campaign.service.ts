@@ -3,6 +3,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from '@nestjs/config';
 import { Logger } from "@nestjs/common";
 import { Buffer } from 'buffer';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { CampaignCreationResponse, CampaignCreationStatus, CreateCampaignDto } from "./campaign.dto";
 import { CampaignRepository } from "./campaign.repository";
@@ -159,7 +160,7 @@ export class CampaignService {
 
     return linkIdUrlMaps;
   }
-q
+
   async getAllCampaigns(): Promise<Campaign[]> {
     return this.campaignRepository.getAllCampaigns();
   }
@@ -197,6 +198,8 @@ q
     const campaignLeads = await this.campaignLeadRepository.getCampaignLeads(campaignId);
 
     for (const campaignLead of campaignLeads) {
+      if (campaignLead.status !== CampaignLeadStatus.New) continue
+
       const emailGenerationQueueObject: EmailGenerationQueueObject = {
         campaign_id: campaignId,
         lead_id: campaignLead.lead_id,
@@ -223,6 +226,24 @@ q
 
     return this.campaignRepository.deactivate(campaignId);
   }
+  
+  /**
+   * Cron job that checks campaigns every 5 minutes and sends outgoings
+   */
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  private async sendOutgoingsCronJob() {
+    this.logger.log('Running cron job to send outgoings');
+
+    const campaigns = await this.campaignRepository.getCampaigns(0, 0);
+
+    for (const campaign of campaigns) {
+      if (campaign.status === CampaignStatus.Active) {
+        this.logger.log(`Campaign ${campaign.id} is active. Sending outgoings...`);
+
+        await this.moveCampaignLeadsToGenerationQueue(campaign.id);
+      }
+    }
+  }
 
   public async handleIncoming(params: { userEmail: string, history_id: string }) {
     const { userEmail, history_id } = params;
@@ -234,7 +255,6 @@ q
     const integrationToken = await this.integrationTokenRepository.findByEmail(userEmail);
     const { refresh_token, history_id: startHistoryId, expires_at } = integrationToken;
     let access_token = integrationToken.access_token;
-    // TODO: move to the separate function for token refresh
     const shouldRefreshToken = !expires_at || !access_token || new Date(expires_at) < new Date();
 
     if (shouldRefreshToken) {
@@ -305,8 +325,7 @@ q
       const lastEventFromTheThread = existingEvents[existingEvents.length - 1];
       const { campaign_id, lead_id, campaign_lead_id } = lastEventFromTheThread;
       const relatedCampaign = await this.campaignRepository.getCampaign(campaign_id);
-      const campaignOwner = relatedCampaign.user_id;
-      const relatedLead = await this.leadRepository.findById({leadId: lead_id, userId: campaignOwner});
+      const relatedLead = await this.leadRepository.findById(lead_id);
       const threadId = messageDetails.threadId;
       const body = this.extractBodyFromMessage(messageDetails);
       const messageIdHeader = headers.find(h => h.name.toLowerCase() === 'message-id')?.value;

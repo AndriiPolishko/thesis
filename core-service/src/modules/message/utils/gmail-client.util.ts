@@ -8,6 +8,7 @@ import { EventType } from 'src/modules/event/event.types';
 import { CampaignLeadRepository } from 'src/modules/campaign-leads/campaign-lead.repository';
 import { CampaignLeadStatus } from 'src/modules/campaign-leads/campaign-lead.types';
 import { GeneratedEmailMessage } from 'src/modules/queue/queue.types'
+import { LeadRepository } from 'src/modules/lead/lead.repository';
 
 interface SendEmailParams {
   access_token: string;
@@ -27,7 +28,6 @@ interface SendOutgoingParams {
   lead_id: number;
   campaign_id: number;
   integrationTokenId: number;
-  // TODO: move it up
   gmail: gmail_v1.Gmail;
 }
 
@@ -52,9 +52,9 @@ export class GmailClientUtil {
   constructor(
     @Inject(EventRepository) private readonly eventRepository: EventRepository,
     @Inject(CampaignLeadRepository) private readonly campaignLeadRepo: CampaignLeadRepository,
+    @Inject(LeadRepository) private readonly leadRepository: LeadRepository,
   ){}
 
-  // TODO: move it out of this class
   async refreshAccessToken(refreshToken: string) {
     try {
       const params = {
@@ -81,24 +81,23 @@ export class GmailClientUtil {
   }
 
   async sendEmail(params: SendEmailParams) {
-    const { access_token, refresh_token, payload, from_email, campaignLeadId, integrationTokenId } = params;
-    const { to_email, subject, body, thread_id, campaign_id, lead_id, message_id } = payload;
+    const { access_token, payload, from_email, campaignLeadId, integrationTokenId } = params;
+    const { subject, body, thread_id, campaign_id, lead_id, message_id } = payload;
 
     try {
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({
-      access_token,
-      // refresh_token, // optional but good
-      // expiry_date: Date.now() + 3600 * 1000, // optional but good
+      access_token
     });
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+    const recepient = await this.leadRepository.findById(lead_id);
+    const to_email = recepient.email;
 
     if (thread_id) {
       this.logger.log(`Found thread_id ${thread_id} in payload. Sending reply to ${to_email} from ${from_email}`);
 
       await this.sendReply({
-        // TODO: remove after testing
-        to: to_email || 'andrii.polishko@ucu.edu.ua',
+        to: to_email ,
         subject,
         body,
         thread_id,
@@ -116,7 +115,7 @@ export class GmailClientUtil {
 
     this.logger.log(`Sending outgoing email to ${to_email} from ${from_email}`);
 
-    await this.sendOutgoing({ to: to_email || 'andrii.polishko@ucu.edu.ua', subject, body, gmail, from_email, campaignLeadId, campaign_id, lead_id, integrationTokenId });
+    await this.sendOutgoing({ to: to_email, subject, body, gmail, from_email, campaignLeadId, campaign_id, lead_id, integrationTokenId });
     } catch (error) {
       this.logger.error('Error sending email', { error });
     }
@@ -173,7 +172,7 @@ export class GmailClientUtil {
 
       // Change status of the campaign lead
       await this.campaignLeadRepo.updateStatus(campaignLeadId, CampaignLeadStatus.Engaged);
-      
+
     }
     catch (error) {
       this.logger.error('Error sending outgoing message', { error });

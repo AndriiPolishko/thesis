@@ -46,8 +46,7 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   async redirect(@Req() req, @Res() res) {
     const { user } = req.user;
-    // TODO: Save refresh token to DB
-    const {accessToken, refreshToken} = await this.authService.login(user);
+    const {accessToken} = await this.authService.login(user);
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,

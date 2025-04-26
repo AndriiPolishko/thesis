@@ -5,7 +5,6 @@ import { DatabaseService } from '../database/database.service';
 import { CampaignCreationResponse, CampaignCreationStatus, CreateCampaignEntity } from "./campaign.dto";
 import { Campaign } from "./campaign.types";
 
-// TODO: rename methods according to the repository pattern
 @Injectable()
 export class CampaignRepository {
   private readonly logger = new Logger(CampaignRepository.name);

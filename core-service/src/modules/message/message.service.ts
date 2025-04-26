@@ -21,7 +21,7 @@ export class MessageService {
   ) {}
 
   async handleSendEmailMessage(payload: GeneratedEmailMessage) {
-    const { campaign_id, lead_id, to_email } = payload;
+    const { campaign_id, lead_id } = payload;
     try {
       const campaign = await this.campaignRepo.findById(campaign_id);
       const userId = campaign.user_id;
@@ -42,7 +42,6 @@ export class MessageService {
       }
 
       const from_email = token.email;
-      // TODO: Add a check before refreshing the token
       const refreshed = await this.gmailUtil.refreshAccessToken(token.refresh_token);
       const { accessToken, refreshToken, expiresAt} = refreshed;
 

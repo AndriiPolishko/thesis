@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { UserRepository } from '../modules/user/user.repository';
+import { UserRepository } from '../user/user.repository';
 import { IntegrationTokenRepository } from 'src/modules/integrationToken/integration-token.repository';
 import { User } from 'src/modules/user/user.types';
 import { Request } from 'express';

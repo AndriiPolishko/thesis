@@ -1,6 +1,6 @@
 import psycopg as pg
 
-from config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
+from config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
 class Database:
     def __init__(self):
@@ -10,7 +10,7 @@ class Database:
     async def connect(self):
         """Creates the database connection."""
         if self.conn is None:
-            connection_string = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+            connection_string = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
             self.conn = await pg.AsyncConnection.connect(conninfo=connection_string)
     
     async def close(self):

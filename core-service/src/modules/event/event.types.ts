@@ -4,6 +4,7 @@ export enum EventType {
   Reply = 'reply',
   Closed = 'closed',
   Booked = 'booked',
+  Optout = 'opt-out'
 }
 
 export interface Event {

@@ -112,6 +112,5 @@ export class EventRepository {
       
       return null;
     }
-  }
-  
+  }  
 }

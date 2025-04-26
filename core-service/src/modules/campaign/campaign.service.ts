@@ -17,6 +17,9 @@ import { EventType } from "../event/event.types";
 import { MessageGenerationProducer } from "../queue/producers/message-generation.producer";
 import { LinkRepository } from "../link/link.repository";
 import { LinkCreationStatus, LinkStatus } from "../link/link.dto";
+import { EmailType } from "../global/email-type-enum";
+import { LeadStatus } from "../lead/lead.types";
+import { CampaignLeadStatus } from "../campaign-leads/campaign-lead.types";
 
 export enum CampaignStatus {
   Active = 'active',
@@ -39,6 +42,7 @@ interface EmailGenerationQueueObject {
   thread?: string;
   thread_id?: string;
   message_id?: string;
+  last_message?: string;
 };
 
 interface HistoryMessageAddedItem {
@@ -298,14 +302,19 @@ export class CampaignService {
         continue;
       }
 
-      const firstExistingEvent = existingEvents[0];
-      const { campaign_id, lead_id, campaign_lead_id } = firstExistingEvent;
+      const lastEventFromTheThread = existingEvents[existingEvents.length - 1];
+      const { campaign_id, lead_id, campaign_lead_id } = lastEventFromTheThread;
       const relatedCampaign = await this.campaignRepository.getCampaign(campaign_id);
       const campaignOwner = relatedCampaign.user_id;
       const relatedLead = await this.leadRepository.findById({leadId: lead_id, userId: campaignOwner});
       const threadId = messageDetails.threadId;
       const body = this.extractBodyFromMessage(messageDetails);
       const messageIdHeader = headers.find(h => h.name.toLowerCase() === 'message-id')?.value;
+      const lastMessageLlmOutput = await this.getTheLastMessageFromTheThread(body, lastEventFromTheThread.body);
+      const lastMessage = this.formatTheLastMessage(lastMessageLlmOutput);
+      const detectedEmailType = await this.detectEmailType(lastMessage);
+      const maxCategory = this.getMaxCategory(detectedEmailType);
+
       const incomingData = {
         from: this.getHeader(headers, 'From'),
         to: this.getHeader(headers, 'To'),
@@ -313,15 +322,32 @@ export class CampaignService {
         message_id: messageIdHeader,
         thread_id: threadId,
         body,
-        type: EventType.Incoming,
+        type: maxCategory as unknown as EventType,
         lead_id,
         campaign_id,
         campaign_lead_id
       };
 
-      this.logger.log(`Saving incoming message to the database for user ${userId}`)
+      this.logger.log(`Saving incoming message to the database for user ${userId}`);
 
-      await this.eventRepository.createEvent(incomingData)
+      await this.eventRepository.createEvent(incomingData);
+
+      if (maxCategory === EmailType["Opt-out"]) {
+        this.logger.log(`Detected opt-out email for user ${userId}. Marking lead as opt-out`);
+        
+        await this.leadRepository.updateLeadStatus(lead_id, LeadStatus.OptOut);
+        await this.campaignLeadRepository.updateStatus(campaign_lead_id, CampaignLeadStatus.Closed);
+
+        return;
+      }
+
+      if (maxCategory === EmailType["Booked"]) {
+        this.logger.log(`Detected booked email for user ${userId}. Marking campaign lead as booked`);
+
+        await this.campaignLeadRepository.updateStatus(campaign_lead_id, CampaignLeadStatus.Booked);
+
+        return;
+      }
 
       // Push data for the reply generation to the queue
       const replyGenerationQueueObject: EmailGenerationQueueObject = {
@@ -333,12 +359,135 @@ export class CampaignService {
         thread: body,
         thread_id: threadId,
         type: EmailGenerationQueueObjectType.Reply,
-        message_id: messageIdHeader
+        message_id: messageIdHeader,
+        last_message: lastMessage
       };
 
       await this.messageGenerationProducer.produce(replyGenerationQueueObject, this.messageGenerationGroupId);
     }
-    
+  }
+
+  private formatTheLastMessage(llmOutout: string): string {
+    const regex = /<highest_message>(.*?)<\/highest_message>/s;
+    const match = llmOutout.match(regex);
+
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+
+    return '';
+  }
+
+  /**
+   * Extract the last message from the email thread using LLM
+   * @param emailThread 
+   * @returns The last message from the email thread
+   */
+  private async getTheLastMessageFromTheThread(emailThread: string, previousThread: string): Promise<string> {
+    const response = await axios.post(this.chatCompletionsUrl, {
+      model: 'gpt-4.1-mini-2025-04-14',
+      messages: [
+        {
+          role: 'system',
+          content: `
+You are a email thread analizator. As input you accept the two email threads <current_thread> and <previous_thread>.
+You need to output the messages that appear in the <current_thread> and don't appear in the <previous_thread>. Output that difference in the <diff> tag.
+Then based on the semantic context inside <diff>, get the highest message from the email thread inside <diff>
+
+Your output should have the following form:
+<diff>
+...message that present in the <current_thread> but not in <previous_thread>...
+</diff>
+
+<highest_message>
+...highest message inside <diff>...
+<highest_message>
+`
+        },
+        {
+          role: 'user',
+          content: `
+<current_thread>
+${emailThread}
+</current_thread>
+
+<previous_thread>
+${previousThread}
+</previous_thread>
+`
+        }
+      ],
+      temperature: 0.9,
+      top_p: 1,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.openaiApiKey}`
+      }
+    });
+
+    const classification = response.data.choices[0].message.content.trim().toLowerCase();
+
+    return classification;
+  }
+
+  /**
+   * Detects the type of email based on its content using LLM.
+   * @param email
+   * @returns String with the type and percentage that indicated the confidence of the type
+   * @example "incoming: 80%, booked: 10%, opt-out: 10%"
+   */
+  private async detectEmailType(email: string): Promise<string> {
+    const response = await axios.post(this.chatCompletionsUrl, {
+      model: 'gpt-4.1-mini-2025-04-14',
+      messages: [
+        {
+          role: 'system',
+          content: `
+You are an assistant that analyzes the possibility that email falls into one of the following categories: incoming, booked, opt-out. Your output ALWAYS follows this format: "incoming: <percentage>%, booked: <percentage>%, opt-out: <percentage>%". The sum of all percentages should be 100%.
+
+Messages that show intent to meet, book a call or other intents to engage with the product should be marked as booked.
+Messages that ask to unsubscribe, cancel or other ways to ask not to message them should be marked as opt-out
+          `
+        },
+        {
+          role: 'user',
+          content: `<email>${email}</email>`
+        }
+      ]
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.openaiApiKey}`
+      }
+    });
+
+    const classification = response.data.choices[0].message.content.trim().toLowerCase();
+
+    return classification;
+  }
+
+  /**
+   * Extracts the maximum category from the classification string.
+   * @param input
+   * @returns
+   */
+  private getMaxCategory(input: string): EmailType {
+    const regex = /([\w-]+):\s*([\d.]+)%/g;
+    let match: RegExpExecArray | null;
+    let maxKey: string | null = null;
+    let maxValue = -Infinity;
+  
+    while ((match = regex.exec(input)) !== null) {
+      const key = match[1];
+      const value = parseFloat(match[2]);
+      if (value > maxValue) {
+        maxValue = value;
+        maxKey = key;
+      }
+    }
+  
+    return maxKey as EmailType;
   }
 
   private extractBodyFromMessage(message: any, preferHtml = false): string {
@@ -375,13 +524,6 @@ export class CampaignService {
     }
   
     return '';
-  }
-
-  private getTheLatestMessageFromTheThread(thread: string): string {
-    const parts = thread.split('\n\n');
-    const lastPart = parts[parts.length - 1];
-
-    return lastPart;
   }
   
   private decodeBase64Url(base64url: string): string {

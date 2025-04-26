@@ -7,7 +7,7 @@ import { AppService } from './app.service';
 import { LeadModule } from '../lead/lead.module';
 import { CampaignModule } from '../campaign/campaign.module';
 import { CampaignLeadModule } from '../campaign-leads/campaign-lead.module';
-import { AuthModule } from 'src/auth/auth.module';
+import { AuthModule } from 'src/modules/auth/auth.module';
 import { MessageModule } from '../message/message.module';
 import { GmailModule } from '../gmail/gmail.module';
 

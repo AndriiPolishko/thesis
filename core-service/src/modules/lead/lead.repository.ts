@@ -144,4 +144,18 @@ export class LeadRepository {
 
     return lead;
   }
+
+  public async updateLeadStatus(leadId: number, status: string): Promise<void> {
+    const query = `
+      UPDATE lead SET status = $1 WHERE id = $2
+    `;
+    const values = [status, leadId];
+
+    try {
+      await this.databaseService.runQuery(query, values);
+      this.logger.log(`Lead with ID ${leadId} updated to status ${status}`);
+    } catch (error) {
+      this.logger.error(`Error updating lead with ID ${leadId}`, error);
+    }
+  }
 }

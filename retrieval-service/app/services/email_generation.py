@@ -25,24 +25,7 @@ class EmailGeneration():
     self.openai_model = "gpt-4o"
 
     
-  async def _get_last_message_from_the_thread(self, thread: str):
-    system_message = 'Your goal is to extract the last message from the email thread. THE LAST MESSAGE appears at the beginning of the thread.'
-    user_message = f'Extract the last message from the thread: {thread}'
-    completion = await self.openai_client.chat.completions.create(
-    model=self.openai_model,
-    messages=[
-        {
-            "role": "system",
-            "content": system_message
-        },
-        {
-            "role": "user",
-            "content": user_message
-        }
-    ])
-    last_message = completion.choices[0].message.content
 
-    return last_message
 
 
   async def _generate_outgoing(self, first_name, last_name, campaign_goal) -> str:
@@ -128,8 +111,7 @@ class EmailGeneration():
     first_name = message.first_name
     last_name = message.last_name
     message_id = message.message_id
-  
-    last_message = await self._get_last_message_from_the_thread(thread)
+    last_message = message.last_message
 
     retrieved_info = await retriever.retrieve(last_message, thread)
     # Generated reply email

@@ -173,6 +173,7 @@ export class GmailClientUtil {
 
       // Change status of the campaign lead
       await this.campaignLeadRepo.updateStatus(campaignLeadId, CampaignLeadStatus.Engaged);
+      
     }
     catch (error) {
       this.logger.error('Error sending outgoing message', { error });

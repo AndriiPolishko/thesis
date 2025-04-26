@@ -22,7 +22,8 @@ export const leadService = {
       firstName,
       lastName,
       email,
-    });
+    }, 
+    { withCredentials: true });
 
     return response.data;
   },

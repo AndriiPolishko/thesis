@@ -1,0 +1,24 @@
+# 1. Base image
+FROM python:3.10-slim AS base
+WORKDIR /app
+
+# 2. Install system deps for psycopg2, aioboto3, etc.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      build-essential \
+      libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Copy & install Python deps
+COPY requirements.txt .
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# 4. Copy application code
+COPY . .
+
+# 5. Expose port & define entrypoint
+ENV HOST=0.0.0.0 \
+    PORT=5003
+EXPOSE ${PORT}
+CMD ["python", "app/main.py"]

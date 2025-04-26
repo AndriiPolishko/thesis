@@ -1,7 +1,7 @@
 import psycopg as pg
 import logging
 
-from config.config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
+from config.config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
 class Database:
     def __init__(self):
@@ -11,7 +11,7 @@ class Database:
     async def connect(self):
         """Creates the database connection."""
         if self.conn is None:
-            connection_string = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+            connection_string = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
             self.conn = await pg.AsyncConnection.connect(conninfo=connection_string)
     
     async def close(self):
@@ -31,12 +31,13 @@ class Database:
         VALUES (%(link_id)s, 
         %(chunk)s, 
         %(embedding)s, 
-        to_tsvector('english', %(chunk)s)
+        to_tsvector('english', %(tsv_chunk)s)
         );'''
         params = {
           "chunk": chunk,
           "embedding": embedding.tolist(),
-          "link_id": link_id
+          "link_id": link_id,
+          "tsv_chunk": chunk
         }
         
         await self.conn.execute(query, params)
@@ -44,8 +45,11 @@ class Database:
         await self.conn.commit()
         
         return True
-      except Exception as e:
-        await self.conn.rollback()
+      except Exception as error:
+        logging.error(f"Error inserting embedding", error)
+        
+        if self.conn:
+          await self.conn.rollback()
         
         return False
 
@@ -62,9 +66,11 @@ class Database:
           result = await cur.fetchone()
           
           return result
-      except Exception as e:
-          logging.error(f"Error finding chunk by hash: {e}")
-      finally:
-          await self.close()
+      except Exception as error:
+        logging.error(f"Error inserting embedding", error)
+        
+        if self.conn:
+          await self.conn.rollback()
+
       
 database = Database()

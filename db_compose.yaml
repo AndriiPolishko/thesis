@@ -13,6 +13,8 @@ services:
     volumes:
       - ./postgres_pgvector/init-scripts:/docker-entrypoint-initdb.d
     restart: unless-stopped
+    networks:
+      - thesis-net
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
@@ -24,6 +26,12 @@ services:
       - "5050:80"
     depends_on:
       - postgres_db
+    networks:
+      - thesis-net
+
+networks:
+  thesis-net:
+    external: true
 
 volumes:
   postgres_data:

@@ -17,8 +17,8 @@ export class LeadController {
     private readonly leadService: LeadService
   ) {}
 
-  @UseGuards(AuthGuard('jwt'))
   @Post()
+  @UseGuards(AuthGuard('jwt'))
   async createLead(@Req() req, @Body() body: CreateLeadBody): Promise<void> {
     const userId = req?.user?.id;
     const { email, firstName, lastName } = body;
@@ -26,8 +26,8 @@ export class LeadController {
     await this.leadService.createLead({ email, firstName, lastName, userId });
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get()
+  @UseGuards(AuthGuard('jwt'))
   async getLeads(@Req() req, @Query('page') page: number, @Query('size') size: number, @Query('campaignId') campaignId?: number): Promise<{ leads: Lead[], totalPages: number }> {
     const userId: number = req?.user?.id;
     const leads: Lead[] = await this.leadService.getLeads({ page, size, userId, campaignId });

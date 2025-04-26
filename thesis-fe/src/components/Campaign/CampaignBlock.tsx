@@ -61,10 +61,7 @@ export function CampaignBlock() {
 
     setIsSubmitting(true);
 
-    const splittedLinks = links
-      .split("\n")
-      .map((link) => link.trim())
-      .filter(Boolean);
+    const splittedLinks = links.split(', ').map(link => link.trim()).filter(link => link !== "");
 
     try {
       mutation.mutate({ campaignName, campaignDescription, splittedLinks });

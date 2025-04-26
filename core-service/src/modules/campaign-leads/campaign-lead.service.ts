@@ -3,7 +3,6 @@ import { Logger } from "@nestjs/common";
 
 import { CampaignLeadRepository } from "./campaign-lead.repository";
 import { AddCampaignLeadsParams } from "./campaign-lead.types";
-import { stat } from "fs";
 
 @Injectable()
 export class CampaignLeadService {

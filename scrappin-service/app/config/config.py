@@ -8,7 +8,7 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5434")
 DB_NAME = os.getenv("DB_NAME", "db")
 DB_USER = os.getenv("DB_USER", "root")
-DB_PASS = os.getenv("DB_PASS", "root")
+DB_PASS = os.getenv("DB_PASSWORD", "root")
 # Embedding Model
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME")
 # AWS

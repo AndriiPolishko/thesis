@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  retrieval-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: retrieval-service:latest
+    container_name: retrieval-service
+    restart: unless-stopped
+    env_file:
+      - .env           # rename env.example → .env and fill in
+    ports:
+      - "8002:8002"
+    networks:
+      - thesis-net
+
+networks:
+  thesis-net:
+    external: true    # assumes your Postgres compose uses this same network

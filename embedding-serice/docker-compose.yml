@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  embeddings-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: embeddings-service:latest
+    container_name: embeddings-service
+    restart: unless-stopped
+    env_file:
+      - .env           # rename env.example → .env and fill in
+    ports:
+      - "5002:5002"
+    networks:
+      - thesis-net
+
+networks:
+  thesis-net:
+    external: true    # assumes your Postgres compose uses this same network

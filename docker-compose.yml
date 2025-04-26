@@ -1,0 +1,38 @@
+services:
+  nest-service:
+    build:
+      context: ./core-service/.
+    volumes:
+      - ./src:/usr/src/app/src
+      - ./package*.json:/usr/src/app/package*.json
+    ports:
+      - "8001:8001"
+    command: npm run start:prod
+    env_file: ./core-service/.env
+    networks:
+      - thesis-net
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+  scrapping-service:
+    build:
+      context: ./scrappin-service/.
+      dockerfile: Dockerfile
+    image: scrapping-service:latest
+    container_name: scrapping-service
+    restart: unless-stopped
+    env_file:
+      - ./scrappin-service/.env           # rename env.example → .env and fill in
+    ports:
+      - "5003:5003"
+    networks:
+      - thesis-net
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+networks:
+  thesis-net:
+    external: true
+    driver: bridge

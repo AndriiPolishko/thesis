@@ -12,7 +12,7 @@ export class UserRepository {
   async createOne(createUserEntity: CreateUserEntity): Promise<{ user: User }> {
     const { firstName, lastName, email } = createUserEntity;
     const query = `
-      INSERT INTO "user" ("firstName", "lastName", email) VALUES ($1, $2, $3) RETURNING id`;
+      INSERT INTO "user" ("first_name", "last_name", email) VALUES ($1, $2, $3) RETURNING id`;
     
     const result = await this.databaseService.runQuery(query, [firstName, lastName, email]);
     const user = result.rows[0];

@@ -20,6 +20,7 @@ async def scrape_urls(
     """
     Kick off background scraping and return immediately.
     """
+
     background.add_task(scrapping_service.scrape, request.link_id_url_maps_str, request.campaign_id)
 
     return {

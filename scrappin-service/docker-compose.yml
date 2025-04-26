@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  scrapping-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: scrapping-service:latest
+    container_name: scrapping-service
+    restart: unless-stopped
+    env_file:
+      - .env           # rename env.example → .env and fill in
+    ports:
+      - "5003:5003"
+    networks:
+      - thesis-net
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+networks:
+  thesis-net:
+    external: true
+    driver: bridge

@@ -1,6 +1,5 @@
 class LinkStatusEnum:
     """Enum for link status."""
-    Scrapped = "Scrapped"
-    Processing = "Processing"
-    Embedded = "Embedded"
-    Error = "Error"
+    Pending='pending'
+    Scrapped='scrapped'
+    Error='error'

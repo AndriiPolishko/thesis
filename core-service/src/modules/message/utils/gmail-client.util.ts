@@ -172,7 +172,7 @@ export class GmailClientUtil {
       await this.eventRepository.createEvent({ from: from_email, to, type: EventType.Outgoing, body, subject, thread_id, lead_id, campaign_id, campaign_lead_id: campaignLeadId, message_id });
 
       // Change status of the campaign lead
-      await this.campaignLeadRepo.updateStatus(campaignLeadId, CampaignLeadStatus.AwaitingReply);
+      await this.campaignLeadRepo.updateStatus(campaignLeadId, CampaignLeadStatus.Engaged);
     }
     catch (error) {
       this.logger.error('Error sending outgoing message', { error });
@@ -226,7 +226,7 @@ export class GmailClientUtil {
       });
 
       // Change status of the campaign lead
-      await this.campaignLeadRepo.updateStatus(campaignLeadId, CampaignLeadStatus.AwaitingReply);
+      //await this.campaignLeadRepo.updateStatus(campaignLeadId, CampaignLeadStatus.AwaitingReply);
     } catch (error) {
       this.logger.error('Error sending reply', { error });
     }

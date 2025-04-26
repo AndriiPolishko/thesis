@@ -48,12 +48,14 @@ class ScrapingService:
     tasks = []
     
     for mapping in mappings:
-        link_id = mapping["link_id"]
-        url = mapping['url']
+        link_id = mapping["linkId"]
+        urls = mapping['linkUrl']
+        urls = urls.split(', ')
         
-        tasks.append(
-            self._bounded_process(link_id, url, campaign_id, existing_hash=None)
-        )
+        for url in urls:
+          tasks.append(
+              self._bounded_process(link_id, url, campaign_id, existing_hash=None)
+          )
       
     await asyncio.gather(*tasks)
 

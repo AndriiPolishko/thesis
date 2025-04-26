@@ -1,9 +1,0 @@
-sentence-transformers
-fastapi
-langchain
-uvicorn[standard]
-psycopg[binary]
-langchain_postgres
-beautifulsoup4
-langchain-community
-sqlalchemy

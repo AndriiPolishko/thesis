@@ -1,10 +1,10 @@
 -- ENUM TYPES
 
 CREATE TYPE event_type AS ENUM ('outgoing', 'incoming', 'closed', 'booked', 'reply');
-CREATE TYPE campaign_lead_status AS ENUM ('new', 'awaiting_reply', 'incoming', 'closed', 'booked');
-CREATE TYPE link_status AS ENUM ('pending', 'scrapped', 'error', 'unscrapable');
-CREATE TYPE lead_status AS ENUM ('pending', 'active', 'closed');
+CREATE TYPE campaign_lead_status AS ENUM ('new', 'engaged', 'booked', 'closed');
+CREATE TYPE link_status AS ENUM ('pending', 'scrapped', 'error');
 CREATE TYPE campaign_status AS ENUM ('pending', 'inactive', 'active');
+CREATE TYPE lead_status AS ENUM ('active', 'closed')
 
 -- TABLES
 
@@ -44,7 +44,7 @@ CREATE TABLE lead (
     first_name TEXT,
     last_name TEXT,
     email TEXT,
-    status lead_status,
+    status lead_status
     user_id INTEGER REFERENCES "user"(id),
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ
@@ -65,6 +65,7 @@ CREATE TABLE link (
     campaign_id INTEGER REFERENCES campaign(id),
     content_hash TEXT,
     status link_status,
+    last_scraped_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ
 );
@@ -89,6 +90,9 @@ CREATE TABLE chunk (
   id           SERIAL PRIMARY KEY,
   chunk_hash   TEXT    NOT NULL,
   chunk        TEXT    NOT NULL,
-  embedding    VECTOR(1536),
-  link_id      INTEGER
+  embedding    VECTOR,
+  text_search_vector TSVECTOR,
+  link_id      INTEGER,
+  created_at   TIMESTAMPTZ,
+  updated_at   TIMESTAMPTZ,
 );

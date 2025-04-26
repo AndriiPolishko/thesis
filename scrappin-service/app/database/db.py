@@ -27,7 +27,7 @@ class Database:
             await self.connect()  # Ensure connection is available
             query = """
             UPDATE link 
-            SET last_scrapped = %s, scrapped_url_hash = %s, status = %s 
+            SET last_scraped_at = %s, content_hash = %s, status = %s 
             WHERE id = %s;
             """
             async with self.conn.cursor() as cur:

@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-HOST = os.getenv("HOST", "127.0.0.1")
-PORT = int(os.getenv("PORT", 8000))
+HOST = os.getenv("HOST", "0.0.0.0")
+PORT = int(os.getenv("PORT", 8002))
 
 # Database Configuration
 DB_HOST = os.getenv("DB_HOST", "localhost")

@@ -1,0 +1,21 @@
+services:
+  nest-service:
+    build:
+      context: .
+    volumes:
+      - ./src:/usr/src/app/src
+      - ./package*.json:/usr/src/app/package*.json
+    ports:
+      - "8001:8001"
+    command: npm run start:prod
+    env_file: .env
+    networks:
+      - thesis-net
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+networks:
+  thesis-net:
+    external: true
+    driver: bridge

@@ -2,8 +2,7 @@ import { Lead, LeadStatus } from "../lead/lead.types";
 
 export enum CampaignLeadStatus {
   New = 'new',
-  AwaitingReply = 'awaiting_reply',
-  Incoming = 'incoming',
+  Engaged = 'engaged',
   Booked = 'booked',
   Closed = 'closed'
 }

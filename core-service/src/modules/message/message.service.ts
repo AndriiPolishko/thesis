@@ -24,7 +24,7 @@ export class MessageService {
     const { campaign_id, lead_id, to_email } = payload;
     try {
       const campaign = await this.campaignRepo.findById(campaign_id);
-      const userId = campaign.owner_id;
+      const userId = campaign.user_id;
       let token = await this.tokenRepo.findByUserId(userId);
 
       if (!token) {

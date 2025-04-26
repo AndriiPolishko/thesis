@@ -20,7 +20,8 @@ import { LinkCreationStatus, LinkStatus } from "../link/link.dto";
 
 export enum CampaignStatus {
   Active = 'active',
-  Inactive = 'inactive'
+  Inactive = 'inactive',
+  Pending = 'pending'
 };
 
 export enum EmailGenerationQueueObjectType {
@@ -97,12 +98,18 @@ export class CampaignService {
       const linkIdUrlMaps = await this.createLinks(campaignId, urls);
       const linkIds = linkIdUrlMaps.map(link => link.linkId);
       const scrappingServiceAddress = this.configService.get<string>('SCRAPPING_SERVICE_ADDRESS');
-      const scrappingServiceResponse = await axios.post(scrappingServiceAddress, {
+
+      console.log('reqest data: ', {
         link_id_url_maps_str: JSON.stringify(linkIdUrlMaps),
-        campaign_id: campaignId
+        campaign_id: Number(campaignId)
       });
 
-      if (scrappingServiceResponse.status !== 200) {
+      const scrappingServiceResponse = await axios.post(scrappingServiceAddress, {
+        link_id_url_maps_str: JSON.stringify(linkIdUrlMaps),
+        campaign_id: Number(campaignId)
+      });
+
+      if (scrappingServiceResponse.status.toString()[0] !== '2') {
         this.logger.error(`Error from scrapping service: ${scrappingServiceResponse.data}. Campaign ID: ${campaignId}, link IDs: ${linkIds}. Setting link statuses to "failed"`,
           urls
         );
@@ -158,7 +165,21 @@ export class CampaignService {
   }
 
   async getCampaign(campaignId: number): Promise<Campaign> {
-    return this.campaignRepository.getCampaign(campaignId);
+    const campaign = await this.campaignRepository.getCampaign(campaignId);
+
+    if (campaign.status === CampaignStatus.Pending) {
+      const links = await this.linkRepository.getLinksByCampaignId(campaignId);
+
+      // Check if none of the links is in "pending" status
+      const allLinksScrapped = links.every(link => link.status !== LinkStatus.Pending);
+      if (allLinksScrapped) {
+        // Update the campaign status to "inactive"
+        await this.campaignRepository.deactivate(campaignId);
+        campaign.status = CampaignStatus.Inactive;
+      }
+    }
+
+    return campaign
   }
 
   async moveCampaignLeadsToGenerationQueue(campaignId: number): Promise<void> {
@@ -280,7 +301,7 @@ export class CampaignService {
       const firstExistingEvent = existingEvents[0];
       const { campaign_id, lead_id, campaign_lead_id } = firstExistingEvent;
       const relatedCampaign = await this.campaignRepository.getCampaign(campaign_id);
-      const campaignOwner = relatedCampaign.owner_id;
+      const campaignOwner = relatedCampaign.user_id;
       const relatedLead = await this.leadRepository.findById({leadId: lead_id, userId: campaignOwner});
       const threadId = messageDetails.threadId;
       const body = this.extractBodyFromMessage(messageDetails);

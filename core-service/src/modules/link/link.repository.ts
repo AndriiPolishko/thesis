@@ -48,4 +48,19 @@ export class LinkRepository {
       this.logger.error(`Error updating link with ID ${linkId}: ${error.message}`);
     }
   }
+
+  async getLinksByCampaignId(campaignId: number): Promise<{ id: number; url: string; status: LinkStatus }[]> {
+    const query = `
+      SELECT id, url, status FROM link WHERE campaign_id = $1`;
+
+    try {
+      const result = await this.databaseService.runQuery(query, [campaignId]);
+      const links = result.rows;
+
+      return links;
+    } catch (error) {
+      this.logger.error(`Error fetching links for campaign ID ${campaignId}: ${error.message}`);
+      return [];
+    }
+  }
 }

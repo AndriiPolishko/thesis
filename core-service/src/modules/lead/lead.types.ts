@@ -1,6 +1,6 @@
 export enum LeadStatus {
   Active = 'active',
-  Inactive = 'inactive'
+  Closed = 'closed'
 }
 
 export interface Lead {

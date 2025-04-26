@@ -56,10 +56,10 @@ export class CampaignLeadRepository {
 
     try {
       const query = `
-        INSERT INTO "campaign_lead" (campaign_id, lead_id, user_id)
-        VALUES ($1, $2, $3)
+        INSERT INTO campaign_lead (campaign_id, lead_id)
+        VALUES ($1, $2)
         RETURNING *;`;
-      const values = [campaignId, leadId, userId];
+      const values = [campaignId, leadId];
 
       this.logger.log(`Start adding campaign lead for user ${userId} with campaignId: ${campaignId} and leadId: ${leadId}`)
 

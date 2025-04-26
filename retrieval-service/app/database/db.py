@@ -63,6 +63,9 @@ class Database:
                 return [row[0] for row in rows]
         except Exception as e:
             print(f"Error retrieving related chunks: {e}")
+            
+            self.conn.rollback()
+            
             return []
     
     async def key_word_retrieval(self, query: str, top_k: int = 25):

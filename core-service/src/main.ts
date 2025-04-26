@@ -11,8 +11,8 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
   });
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT') || 3000;
-  const host = configService.get<string>('HOST') || 'localhost';
+  const port = configService.get<number>('PORT') || 8001;
+  const host = configService.get<string>('HOST') || '0.0.0.0';
 
   app.use(cookieParser());
   app.enableCors({

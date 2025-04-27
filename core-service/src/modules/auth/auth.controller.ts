@@ -31,9 +31,8 @@ export class AuthController {
       httpOnly: true,
       path: '/',
       sameSite: 'lax',
-      // secure: true, // uncomment if using https
     });
-    res.status(200).json({ message: 'Logged out successfully' });
+    // res.status(200).json({ message: 'Logged out successfully' });
 
     this.logger.log(`User ${userId} logged out and cookie cleared`);
 

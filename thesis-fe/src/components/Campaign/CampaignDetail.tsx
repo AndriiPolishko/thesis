@@ -201,7 +201,7 @@ export function CampaignDetail() {
   }
 
   return (
-    <Box borderWidth="1px" borderRadius="lg" bg="white" p={6}>
+    <Box borderWidth="1px" borderRadius="lg" bg="white" p={6} width={['full']} mx="auto">
       <Button
         leftIcon={<ArrowLeft size={16} />}
         variant="ghost"

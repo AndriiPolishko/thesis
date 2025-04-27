@@ -1,5 +1,9 @@
-import { Box, Flex, Text, TabList, Tab, Tabs } from '@chakra-ui/react'
+import axios from 'axios'
+
+import { Box, Flex, Text, TabList, Tab, Tabs, Button } from '@chakra-ui/react'
 import { useLocation, useNavigate } from 'react-router-dom'
+
+import { baseApiUrl } from '../../globals';
 
 export function Header() {
   const location = useLocation()
@@ -34,6 +38,10 @@ export function Header() {
         break
     }
   }
+  const handleLogout = () => {
+    window.location.href = `${baseApiUrl}/auth/google/logout`
+  }
+
   return (
     <Box
       as="header"
@@ -47,9 +55,14 @@ export function Header() {
     >
       <Flex direction="column" maxW="100%" mx="auto">
         <Box px={8} py={4}>
+        <Flex px={8} py={4} align="center" justify="space-between">
           <Text fontSize="xl" fontWeight="bold" color="blue.600">
             Mail Automation
           </Text>
+          <Button colorScheme="red" size="sm" onClick={handleLogout}>
+            Logout
+          </Button>
+        </Flex>
         </Box>
         <Tabs index={getTabIndex()} onChange={handleTabChange}>
           <TabList

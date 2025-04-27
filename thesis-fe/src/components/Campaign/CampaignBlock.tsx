@@ -86,7 +86,7 @@ export function CampaignBlock() {
             isDisabled={isSubmitting}
           />
         </FormControl>
-        <FormControl>
+        <FormControl isRequired>
           <FormLabel>Goal</FormLabel>
           <Textarea 
             placeholder="Enter campaign goal" rows={4} 
@@ -95,7 +95,7 @@ export function CampaignBlock() {
             isDisabled={isSubmitting}
           />
         </FormControl>
-        <FormControl>
+        <FormControl isRequired>
           <FormLabel>Add Links</FormLabel>
           <Textarea 
             placeholder="Add URL to scrape (separate by comma)" rows={2} 
@@ -104,7 +104,7 @@ export function CampaignBlock() {
             isDisabled={isSubmitting}
           />
         </FormControl>
-        <FormControl>
+        <FormControl isRequired>
           <FormLabel>Campaign system prompt</FormLabel>
           <Textarea 
             placeholder="Add system prompt for the campaign" rows={2} 

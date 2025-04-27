@@ -6,8 +6,23 @@ interface CampaignLinksTableProps {
   links: CampaignLink[];
 }
 
-function formatDate(date: Date | null) {
-  return date ? date.toISOString().split('T')[0] : '-';
+function formatDate(isoString: string | null) {
+  if (!isoString) {
+    return 'N/A';
+  }
+
+  const date = new Date(isoString);
+
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  };
+
+  return date.toLocaleString(undefined, options);
 }
 
 export function CampaignLinksTable({ links }: CampaignLinksTableProps) {

@@ -59,8 +59,12 @@ class Database:
             async with self.conn.cursor() as cursor:
                 await cursor.execute(query, (query_embedding, top_k))
                 rows = await cursor.fetchall()
+                chunks = []
                 
-                return [row[0] for row in rows]
+                for row in rows:
+                  chunks.append(row[0])
+              
+                return chunks
         except Exception as e:
             print(f"Error retrieving related chunks: {e}")
             
@@ -85,8 +89,12 @@ class Database:
           await cursor.execute(sql, params)
           rows = await cursor.fetchall()
           
-          # Return just the list of chunks
-          return [row[0] for row in rows]
+          chunks = []
+              
+          for row in rows:
+            chunks.append(row[0])
+        
+          return chunks
       except Exception as e:
         print(f"Error performing keyword search: {e}")
         

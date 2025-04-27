@@ -1,5 +1,5 @@
 # ---------- Stage 1: Build ----------
-  FROM node:18-alpine AS builder
+  FROM node:20.19.1-alpine AS builder
 
   # 1. Create app dir
   WORKDIR /usr/src/app
@@ -20,7 +20,7 @@
       npm run build
   
   # ---------- Stage 2: Production ----------
-  FROM node:18-alpine
+  FROM node:20.19.1-alpine
   
   WORKDIR /usr/src/app
   

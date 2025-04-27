@@ -9,7 +9,7 @@ services:
     container_name: embeddings-service
     restart: unless-stopped
     env_file:
-      - .env           # rename env.example → .env and fill in
+      - .env
     ports:
       - "5002:5002"
     networks:

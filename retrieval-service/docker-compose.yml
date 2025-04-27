@@ -9,7 +9,7 @@ services:
     container_name: retrieval-service
     restart: unless-stopped
     env_file:
-      - .env           # rename env.example → .env and fill in
+      - .env
     ports:
       - "8002:8002"
     networks:

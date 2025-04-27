@@ -28,7 +28,7 @@ class Retriever:
     for query in expanded_queries:
       retrieved_chunks = await self._hybrid_retrieval(query)
       
-      list_of_lists_of_chunks.append(retrieved_chunks) 
+      list_of_lists_of_chunks.append(retrieved_chunks)
     
     # Rerank the chunks using RRF
     reranked_chunks = self._rrf_fusion(list_of_lists_of_chunks)

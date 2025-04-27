@@ -1,22 +1,9 @@
 import aioboto3
 import logging
-from pydantic import BaseModel
-from typing import Optional
 
 from config import AWS_REGION, SQS_MESSAGE_GENERATION_QUEUE_URL
 from services.email_generation import email_generation
-
-# Interface for a received email generation message 
-class EmailGenerationMessage(BaseModel):
-  campaign_id: int
-  lead_id: int
-  campaign_goal: str
-  first_name: str
-  last_name: str
-  thread_id: Optional[str] = None
-  thread: Optional[str] = None
-  last_message: Optional[str] = None
-  message_id: Optional[str] = None
+from models.models import EmailGenerationMessage
 
 class EmailCreationConsumer():
   def __init__(self):

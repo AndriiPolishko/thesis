@@ -15,15 +15,15 @@ services:
       - 8.8.8.8
       - 1.1.1.1
 
-  scrapping-service:
+  scraping-service:
     build:
-      context: ./scrappin-service/.
+      context: ./scraping-service/.
       dockerfile: Dockerfile
-    image: scrapping-service:latest
-    container_name: scrapping-service
+    image: scraping-service:latest
+    container_name: scraping-service
     restart: unless-stopped
     env_file:
-      - ./scrappin-service/.env           # rename env.example → .env and fill in
+      - ./scraping-service/.env
     ports:
       - "5003:5003"
     networks:
@@ -31,6 +31,35 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+
+  retrieval-service:
+    build:
+      context: ./retrieval-service
+      dockerfile: Dockerfile
+    image: retrieval-service:latest
+    container_name: retrieval-service
+    restart: unless-stopped
+    env_file:
+      - ./retrieval-service/.env
+    ports:
+      - "8002:8002"
+    networks:
+      - thesis-net
+
+  embedding-service:
+    build:
+      context: ./embedding-service
+      dockerfile: Dockerfile
+    image: embedding-service:latest
+    container_name: embedding-service
+    restart: unless-stopped
+    env_file:
+      - ./embedding-service/.env
+    ports:
+      - "5002:5002"
+    networks:
+      - thesis-net
+
 
 networks:
   thesis-net:

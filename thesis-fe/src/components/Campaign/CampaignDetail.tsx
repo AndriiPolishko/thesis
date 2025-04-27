@@ -45,7 +45,7 @@ export interface CampaignLink  {
   id: number;
   url: string;
   status: LinkStatus;
-  last_scraped_at: Date | null;
+  last_scraped_at: string | null;
 }
 
 export function CampaignDetail() {

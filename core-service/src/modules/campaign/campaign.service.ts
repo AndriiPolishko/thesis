@@ -132,6 +132,8 @@ export class CampaignService {
         }
       }
 
+      this.logger.log(`Scrapping service response for campaign ${campaignId}: ${scrappingServiceResponse.data}`);
+
       return saveCampaignToCoreDbRes;
     } catch (error) {
       this.logger.error(`Error creating campaign: ${error.message}`, error);

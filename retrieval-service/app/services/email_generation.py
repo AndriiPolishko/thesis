@@ -1,33 +1,16 @@
 import logging
 from openai import AsyncOpenAI
-from pydantic import BaseModel
-from typing import Optional
+
 
 from prompts.openai_prompts import outgoing_system_prompt, outgoing_user_prompt, reply_system_prompt, reply_user_prompt
 from sqs_queue.producer import email_producer
 from services.retriever import retriever
-
-# Interface for a received email generation message 
-class EmailGenerationMessage(BaseModel):
-  campaign_id: int
-  lead_id: int
-  campaign_goal: str
-  first_name: str
-  last_name: str
-  thread_id: Optional[str] = None
-  thread: Optional[str] = None
-  last_message: Optional[str] = None
-  message_id: Optional[str] = None
-  campaign_system_prompt: str
+from models.models import EmailGenerationMessage
 
 class EmailGeneration():
   def __init__(self):
     self.openai_client = AsyncOpenAI()
     self.openai_model = "gpt-4o"
-
-    
-
-
 
   async def _generate_outgoing(self, first_name, last_name, campaign_goal, campaign_system_prompt) -> str:
     '''
@@ -35,22 +18,26 @@ class EmailGeneration():
     '''
     
     user_outgoing_prompt = outgoing_user_prompt.format(first_name=first_name, last_name=last_name, campaign_goal=campaign_goal)
+    messages = [
+      {
+        "role": "system",
+        "content": outgoing_system_prompt
+      }]
+    
+    if campaign_system_prompt:
+      messages.append({
+        "role": "user",
+        "content": campaign_system_prompt
+      })
+      
+    messages.append({
+        "role": "user",
+        "content": user_outgoing_prompt
+    })
+    
     completion = await self.openai_client.chat.completions.create(
     model=self.openai_model,
-    messages=[
-        {
-            "role": "system",
-            "content": outgoing_system_prompt
-        },
-        {
-            "role": "user",
-            "content": campaign_system_prompt
-        },
-        {
-            "role": "user",
-            "content": user_outgoing_prompt
-        }
-    ])
+    messages=messages)
         
     generated_outgoing = completion.choices[0].message.content
     
@@ -64,22 +51,27 @@ class EmailGeneration():
     # TODO: Use the retrieved info to generate a reply
     
     user_reply_prompt = reply_user_prompt.format(first_name=first_name, last_name=last_name, campaign_goal=campaign_goal, thread=thread, last_message=last_message, retrieved_info=retrieved_info)
+    messages = [
+      {
+        "role": "system",
+        "content": reply_system_prompt
+      }
+    ]
+    
+    if campaign_system_prompt:
+      messages.append({
+        "role": "user",
+        "content": campaign_system_prompt
+      })
+      
+    messages.append({
+        "role": "user",
+        "content": user_reply_prompt
+    })
+    
     completion = await self.openai_client.chat.completions.create(
       model=self.openai_model,
-      messages=[
-          {
-              "role": "system",
-              "content": reply_system_prompt
-          },
-          {
-              "role": "user",
-              "content": campaign_system_prompt
-          },
-          {
-              "role": "user",
-              "content": user_reply_prompt
-          }
-      ]
+      messages=messages
     )
     generated_reply = completion.choices[0].message.content
     

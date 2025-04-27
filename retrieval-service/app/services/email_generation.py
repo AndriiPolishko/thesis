@@ -2,7 +2,7 @@ import logging
 from openai import AsyncOpenAI
 
 
-from prompts.openai_prompts import outgoing_system_prompt, outgoing_user_prompt, reply_system_prompt, reply_user_prompt
+from prompts.openai_prompts import top_level_system_prompt, outgoing_user_prompt, top_level_system_prompt, reply_user_prompt
 from sqs_queue.producer import email_producer
 from services.retriever import retriever
 from models.models import EmailGenerationMessage
@@ -21,7 +21,7 @@ class EmailGeneration():
     messages = [
       {
         "role": "system",
-        "content": outgoing_system_prompt
+        "content": top_level_system_prompt
       }]
     
     if campaign_system_prompt:
@@ -54,7 +54,7 @@ class EmailGeneration():
     messages = [
       {
         "role": "system",
-        "content": reply_system_prompt
+        "content": top_level_system_prompt
       }
     ]
     

@@ -40,7 +40,7 @@ class Database:
           "tsv_chunk": chunk
         }
         
-        await self.conn.execute(query, params)
+        await self.conn.execute(query, params, prepare=False)
         
         await self.conn.commit()
         

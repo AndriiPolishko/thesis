@@ -1,16 +1,16 @@
-import axios from 'axios';
 import { Box, Button, VStack, Heading, Text } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
 import { useAuth } from '../../../contexts/AuthContext';
+import { baseApiUrl } from '../../../globals';
 
 // FIXME: fix the image getting
 // import { ReactComponent as GoogleIcon } from './images/google.svg'
 
 export function LoginPage() {
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8001/auth/google/login';
+    window.location.href = `${baseApiUrl}/auth/google/login`;
   }
 
   const { isAuthenticated } = useAuth();

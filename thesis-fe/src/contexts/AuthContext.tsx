@@ -3,6 +3,7 @@ import React, { useState, createContext, useContext, useEffect } from 'react'
 import { useToast } from '@chakra-ui/react'
 
 import { CenterSpinner } from '../components/Utils/CenterSpinner'
+import { baseApiUrl } from '../globals'
 
 interface AuthContextType {
   isAuthenticated: boolean
@@ -29,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => setIsAuthenticated(false)
 
   async function getUser() {
-    axios.get('http://localhost:8001/auth/google/me', { withCredentials: true })
+    axios.get(`${baseApiUrl}/auth/google/me`, { withCredentials: true })
     .then((res) => {
       setIsAuthenticated(true);
       setUser(res.data);

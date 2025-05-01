@@ -21,6 +21,7 @@ import { LinkCreationStatus, LinkStatus } from "../link/link.dto";
 import { EmailType } from "../global/email-type-enum";
 import { LeadStatus } from "../lead/lead.types";
 import { CampaignLeadStatus } from "../campaign-leads/campaign-lead.types";
+import { use } from "passport";
 
 export enum CampaignStatus {
   Active = 'active',
@@ -164,16 +165,16 @@ export class CampaignService {
     return linkIdUrlMaps;
   }
 
-  async getAllCampaigns(): Promise<Campaign[]> {
-    return this.campaignRepository.getAllCampaigns();
+  async getAllCampaigns(userId): Promise<Campaign[]> {
+    return this.campaignRepository.getAllCampaigns(userId);
   }
 
-  async getCampaigns(page: number, size: number): Promise<Campaign[]> {
-    return this.campaignRepository.getCampaigns(page, size);
+  async getCampaigns(page: number, size: number, userId: number): Promise<Campaign[]> {
+    return this.campaignRepository.getCampaigns(page, size, userId);
   }
 
-  async getTotalPages(pageSize: number): Promise<number> {
-    const totalCampaigns = await this.campaignRepository.getTotalCampaigns();
+  async getTotalPages(pageSize: number, userId: number): Promise<number> {
+    const totalCampaigns = await this.campaignRepository.getTotalCampaigns(userId);
     const totalPages = Math.ceil(totalCampaigns / pageSize);
 
     return totalPages;
@@ -203,17 +204,27 @@ export class CampaignService {
     for (const campaignLead of campaignLeads) {
       if (campaignLead.status !== CampaignLeadStatus.New) continue
 
-      const emailGenerationQueueObject: EmailGenerationQueueObject = {
-        campaign_id: campaignId,
-        lead_id: campaignLead.lead_id,
-        first_name: campaignLead.first_name,
-        last_name: campaignLead.last_name,
-        campaign_goal: campaignLead.campaign_goal,
-        type: EmailGenerationQueueObjectType.Outgoing,
-        campaign_system_prompt: campaignLead.campaign_system_prompt,
-      };
+      try {
+        const emailGenerationQueueObject: EmailGenerationQueueObject = {
+          campaign_id: campaignId,
+          lead_id: campaignLead.lead_id,
+          first_name: campaignLead.first_name,
+          last_name: campaignLead.last_name,
+          campaign_goal: campaignLead.campaign_goal,
+          type: EmailGenerationQueueObjectType.Outgoing,
+          campaign_system_prompt: campaignLead.campaign_system_prompt,
+        };
+  
+        await this.messageGenerationProducer.produce(emailGenerationQueueObject, this.messageGenerationGroupId);
 
-      await this.messageGenerationProducer.produce(emailGenerationQueueObject, this.messageGenerationGroupId);
+        this.logger.log(`Campaign lead ${campaignLead.id} moved to generation queue successfully`, {
+          campaignLeadId: campaignLead.id,
+          campaignId,
+          leadId: campaignLead.lead_id
+        });
+      } catch (error) {
+        this.logger.error(`Error moving campaign lead ${campaignLead.id} to generation queue`, error);
+      }      
     }
   }
 
@@ -223,26 +234,32 @@ export class CampaignService {
     if (newStatus === CampaignStatus.Active) {
       const activeCampaign = await this.campaignRepository.activate(campaignId);
 
+      this.logger.log(`Campaign ${campaignId} activated successfully`);
+
       await this.moveCampaignLeadsToGenerationQueue(campaignId);
 
       return activeCampaign;
     }
 
-    return this.campaignRepository.deactivate(campaignId);
+    const status = await this.campaignRepository.deactivate(campaignId);
+
+    this.logger.log(`Campaign ${campaignId} deactivated successfully`);
+
+    return status;
   }
   
   /**
    * Cron job that checks campaigns every 5 minutes and sends outgoings
    */
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   private async sendOutgoingsCronJob() {
     this.logger.log('Running cron job to send outgoings');
 
-    const campaigns = await this.campaignRepository.getCampaigns(0, 0);
+    const campaigns = await this.campaignRepository.getAllCampaigns();
 
     for (const campaign of campaigns) {
       if (campaign.status === CampaignStatus.Active) {
-        this.logger.log(`Campaign ${campaign.id} is active. Sending outgoings...`);
+        this.logger.log(`Campaign ${campaign.id} is active. Checking for new leads`);
 
         await this.moveCampaignLeadsToGenerationQueue(campaign.id);
       }
@@ -618,5 +635,21 @@ Messages that ask to unsubscribe, cancel or other ways to ask not to message the
    */
   private getHeader (headers, name: string) {
     return headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value;
+  }
+
+  public async deleteCampaign(params: { campaignId: number, userId: number }) {
+    const { campaignId, userId } = params;
+
+    const campaign = await this.campaignRepository.getCampaign(campaignId);
+
+    if (!campaign) {
+      throw new Error(`Campaign with ID ${campaignId} not found`);
+    }
+
+    if (campaign.user_id !== userId) {
+      throw new Error(`User with ID ${userId} does not have permission to delete campaign with ID ${campaignId}`);
+    }
+
+    await this.campaignRepository.deleteCampaign(campaignId);
   }
 }

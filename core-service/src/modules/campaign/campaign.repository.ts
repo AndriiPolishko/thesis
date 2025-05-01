@@ -4,6 +4,7 @@ import { Logger } from "@nestjs/common";
 import { DatabaseService } from '../database/database.service';
 import { CampaignCreationResponse, CampaignCreationStatus, CreateCampaignEntity } from "./campaign.dto";
 import { Campaign } from "./campaign.types";
+import { use } from "passport";
 
 @Injectable()
 export class CampaignRepository {
@@ -36,35 +37,60 @@ export class CampaignRepository {
     }
   }
 
-  async getAllCampaigns() {
-    const result = await this.databaseService.runQuery('SELECT * FROM campaign');
+  async getAllCampaigns(userId?: number): Promise<Campaign[]> {
+    let query = 'SELECT * FROM campaign';
+    const params: Array<number> = [];
+
+    if (userId) {
+      query += ' WHERE user_id = $1';
+      params.push(userId);
+    }
+
+    const result = await this.databaseService.runQuery(query, params);
     const campaigns: Campaign[] = result.rows;
 
     return campaigns;
   }
 
-  async getCampaigns(page: number, size: number) {
+  async getCampaigns(
+    page: number,
+    size: number,
+    userId?: number
+  ): Promise<Campaign[]> {
     try {
-      let query = `SELECT * FROM campaign`;
-      const params: Array<number> = [];
+      const params: number[] = [];
+      const whereClauses: string[] = [];
   
-      // If both page and size are provided and greater than zero, apply pagination
+      if (userId != null) {
+        params.push(userId);
+        whereClauses.push(`user_id = $${params.length}`);
+      }
+  
+      let query = `SELECT * FROM campaign`;
+  
+      if (whereClauses.length) {
+        query += ` WHERE ` + whereClauses.join(' AND ');
+      }
+  
       if (page > 0 && size > 0) {
-        query += ` LIMIT $1 OFFSET $2`;
-        params.push(size, (page - 1) * size);
+        params.push(size);
+        const limitIndex = params.length;
+        params.push((page - 1) * size);
+        const offsetIndex = params.length;
+  
+        query += ` LIMIT $${limitIndex} OFFSET $${offsetIndex}`;
       }
   
       const result = await this.databaseService.runQuery(query, params);
-      const campaigns: Campaign[] = result.rows;
-      return campaigns;
+      return result.rows as Campaign[];
     } catch (error) {
       this.logger.error('Error fetching campaigns', error);
       return [];
     }
   }
 
-  async getTotalCampaigns() {
-    const result = await this.databaseService.runQuery('SELECT COUNT(*) FROM campaign');
+  async getTotalCampaigns(userId: number): Promise<number> {
+    const result = await this.databaseService.runQuery('SELECT COUNT(*) FROM campaign WHERE user_id = $1', [userId]);
     const totalCampaigns = Number(result.rows[0].count);
 
     return totalCampaigns;
@@ -139,6 +165,18 @@ export class CampaignRepository {
       this.logger.error('Error fetching campaign by ID', error);
 
       return null;
+    }
+  }
+
+  async deleteCampaign(campaignId: number): Promise<void> {
+    const query = `
+      DELETE FROM campaign
+      WHERE id = $1`;
+
+    try {
+      await this.databaseService.runQuery(query, [campaignId]);
+    } catch (error) {
+      this.logger.error('Error deleting campaign', error);
     }
   }
 }

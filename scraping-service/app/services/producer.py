@@ -16,7 +16,8 @@ class SQSproducer:
 
     async def initialize(self):
         self.sqs_client = await self.session.client("sqs", region_name=AWS_REGION).__aenter__()
-        logging.info("✅ SQS EmbeddingQueue initialized.")
+        
+        logging.info("SQS EmbeddingQueue initialized.")
 
     async def send_message(self, message: dict):
         try:
@@ -26,14 +27,15 @@ class SQSproducer:
                 MessageGroupId=f"chunk-to-embed",
                 MessageDeduplicationId=str(uuid.uuid4())
             )
-            logging.info(f"✅ SQS message sent: {message}")
+            
+            logging.info(f"SQS message sent: {message}")
         except Exception as e:
-            logging.exception("❌ Failed to send message to SQS")
+            logging.exception("Failed to send message to SQS")
 
     async def stop(self):
         if self.sqs_client:
             await self.sqs_client.__aexit__(None, None, None)
-            logging.info("✅ SQS EmbeddingQueue stopped.")
+            logging.info("SQS EmbeddingQueue stopped.")
 
 # Create a global instance
 sqs_producer = SQSproducer()

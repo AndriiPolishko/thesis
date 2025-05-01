@@ -25,13 +25,13 @@ export class GeneratedMessageConsumer implements OnModuleInit {
 
       for (const message of messages) {
         try {
-          await this.sqs.deleteMessage(message.ReceiptHandle);
-
           const body: GeneratedEmailMessage = JSON.parse(message.Body);
 
           this.logger.log(`Received message: ${JSON.stringify(body)}`);
   
           await this.messageService.handleSendEmailMessage(body);
+
+          await this.sqs.deleteMessage(message.ReceiptHandle);
         }
         catch (error) {
           this.logger.error(`Error processing message: ${error.message}. Message body: ${message.Body}`);

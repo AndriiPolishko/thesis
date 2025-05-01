@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Patch, Post, Query, Request, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Patch, Post, Query, Req, Request, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 
 import { CampaignService, CampaignStatus } from "./campaign.service";
@@ -27,16 +27,20 @@ export class CampaignController {
   }
 
   @Get('all')
-  async getAllCampaigns(): Promise<Campaign[]> {
-    const campaigns = await this.campaignService.getAllCampaigns();
+  @UseGuards(AuthGuard('jwt'))
+  async getAllCampaigns(@Req() req): Promise<Campaign[]> {
+    const userId = req?.user?.id;
+    const campaigns = await this.campaignService.getAllCampaigns(userId);
 
     return campaigns;
   }
 
   @Get()
-  async getCampaigns(@Query('page') page: number, @Query('size') size: number): Promise<GetCampaignsResponse> {
-    const campaigns = await this.campaignService.getCampaigns(page, size);
-    const totalPages = await this.campaignService.getTotalPages(size);
+  @UseGuards(AuthGuard('jwt'))
+  async getCampaigns(@Req() req, @Query('page') page: number, @Query('size') size: number): Promise<GetCampaignsResponse> {
+    const userId = req?.user?.id;
+    const campaigns = await this.campaignService.getCampaigns(page, size, userId);
+    const totalPages = await this.campaignService.getTotalPages(size, userId);
 
     return {
       campaigns,
@@ -45,6 +49,7 @@ export class CampaignController {
   }
 
   @Get("/:id")
+  @UseGuards(AuthGuard('jwt'))
   async getCampaign(@Request() req): Promise<Campaign> {
     const campaignId = req.params.id;
     const campaign = await this.campaignService.getCampaign(campaignId);
@@ -53,11 +58,24 @@ export class CampaignController {
   }
 
   @Patch("/change-status/:id")
+  @UseGuards(AuthGuard('jwt'))
   async changeCampaignStatus(@Request() req, @Body() toggleCampaignStatusBody: { newStatus: CampaignStatus }): Promise<Campaign> {
     const campaignId = req.params.id;
     const { newStatus } = toggleCampaignStatusBody;
     const campaign = await this.campaignService.changeCampaignStatus({ campaignId, newStatus });
 
     return campaign;
+  }
+
+  @Delete("/:id")
+  @UseGuards(AuthGuard('jwt'))
+  async deleteCampaign(@Request() req): Promise<{ message: string }> {
+    const userId = req?.user?.id;
+    const campaignId = req.params.id;
+    await this.campaignService.deleteCampaign({campaignId, userId});
+
+    return {
+      message: "Campaign deleted successfully"
+    };
   }
 }

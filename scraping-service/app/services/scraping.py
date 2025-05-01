@@ -61,7 +61,7 @@ class ScrapingService:
 
   async def refetch_all(self) -> None:
     '''Refetch all links from the database and process them'''
-    all_links = await database.get_all_links()
+    all_links = await database.get_all_links_for_campaign()
     tasks = []
     for link in all_links:
         url = link["url"]
@@ -155,7 +155,6 @@ class ScrapingService:
     headers = self._get_request_headers()
     
     try:
-      # response = requests.get(url, headers=headers, proxies={"http": proxy, "https": proxy})
       response = await random_client.get(url, headers=headers)
       
       response.raise_for_status()

@@ -15,9 +15,10 @@ class Database:
     
     async def close(self):
       """Closes the database connection."""
+      
       if self.conn:
-          await self.conn.close()
-          self.conn = None
+        await self.conn.close()
+        self.conn = None
           
     async def insert_embedding(self, link_id: str, chunk: str, embedding: list):
       """Inserts the embedding into the database."""
@@ -42,6 +43,7 @@ class Database:
         '''
         Retrieve chunks with the highest cosine similarity to the query_embedding.
         '''
+        
         if self.conn is None:
             await self.connect()
         
@@ -74,6 +76,9 @@ class Database:
     
     async def key_word_retrieval(self, query: str, top_k: int = 25):
       """Performs a keyword search using the query and returns the top_k results."""
+      
+      if self.conn is None:
+        await self.connect()
   
       sql = """
       SELECT chunk
@@ -100,6 +105,6 @@ class Database:
         
         self.conn.rollback()
         
-        return None
+        return []
       
 database = Database()

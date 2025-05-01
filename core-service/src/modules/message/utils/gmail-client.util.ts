@@ -145,6 +145,17 @@ export class GmailClientUtil {
       const thread_id = response.data.threadId;
       const message_id = response.data.id;
 
+      // Save event to the database
+      this.logger.log(`Saving event for outgoing email to ${to} from ${from_email}`, {
+        thread_id,
+        message_id,
+        campaignLeadId,
+        campaign_id,
+        lead_id,
+        subject,
+        body
+      });
+
       await this.eventRepository.createEvent({
         from: from_email,
         to,
@@ -157,18 +168,6 @@ export class GmailClientUtil {
         campaign_lead_id: campaignLeadId,
         message_id
       });
-
-      // Save event to the database
-      this.logger.log(`Saving event for outgoing email to ${to} from ${from_email}`, {
-        thread_id,
-        message_id,
-        campaignLeadId,
-        campaign_id,
-        lead_id,
-        subject,
-        body
-      });
-      await this.eventRepository.createEvent({ from: from_email, to, type: EventType.Outgoing, body, subject, thread_id, lead_id, campaign_id, campaign_lead_id: campaignLeadId, message_id });
 
       // Change status of the campaign lead
       await this.campaignLeadRepo.updateStatus(campaignLeadId, CampaignLeadStatus.Engaged);
@@ -185,7 +184,6 @@ export class GmailClientUtil {
     try {
       const headers = [
         `To: ${to}`,
-        `Subject: ${subject}`,
         'Content-Type: text/plain; charset="UTF-8"',
         `In-Reply-To: ${message_id}`,
         `References: ${message_id}`

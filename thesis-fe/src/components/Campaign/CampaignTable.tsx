@@ -9,12 +9,12 @@ import {
   Box,
   Badge,
   Select,
-  Button,
-  useToast,
+  Button
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 
 import { campaignService } from '../../api/campaignService';
+import { toastHook } from '../hooks/toast-hook';
 
 interface Campaign {
   id: number;
@@ -23,17 +23,13 @@ interface Campaign {
   status: 'active' | 'completed' | 'draft';
 }
 
-interface CampaignTableProps {
-  onCampaignSelect: (campaign: Campaign) => void;
-}
-
 export function CampaignTable() {
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
-  const toast = useToast();
+  const toastWrapper = toastHook();
 
   useEffect(() => {
     fetchCampaigns();
@@ -46,13 +42,11 @@ export function CampaignTable() {
       setCampaigns(data.campaigns);
       setTotalPages(data.totalPages);
     } catch (error: any) {
-      toast({
+      toastWrapper({
         title: 'Failed to load campaigns.',
         description: error?.message || 'Something went wrong while fetching campaigns.',
         status: 'error',
-        duration: 5000,
-        isClosable: true,
-        position: 'top-right',
+
       });
     }
   };
@@ -72,7 +66,6 @@ export function CampaignTable() {
   function onCampaignSelect(campaignId: number) {
     navigate(`/campaigns/${campaignId}`)
   }
-  
 
   return (
     <Box borderWidth="1px" borderRadius="lg" bg="white" overflow="hidden" p={4}>

@@ -1,7 +1,8 @@
-import { Table, Thead, Tbody, Tr, Th, Td, Box, Badge, useToast, CloseButton } from '@chakra-ui/react';
+import { Table, Thead, Tbody, Tr, Th, Td, Box, Badge, CloseButton } from '@chakra-ui/react';
 
 import { campaignLeadsService } from '../../../api/campaignLeads';
 import { CampaignLead } from '../CampaignDetail';
+import { toastHook } from '../../hooks/toast-hook';
 
 interface CampaignLeadsTableProps {
   campaignLeads: CampaignLead[];
@@ -10,29 +11,18 @@ interface CampaignLeadsTableProps {
 }
 
 export function CampaignLeadsTable({ campaignLeads, fetchCampaignLeads, fetchLeads }: CampaignLeadsTableProps) {
-  const toast = useToast();
+  const toastWrapper = toastHook();
 
   async function handleRemoveCampaignLead(campaignLeadId: number) {
     try {
       await campaignLeadsService.removeCampaignLead(campaignLeadId);
-      toast({
-        title: "Lead removed",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-        position: "top-right"
-      });
+
+      toastWrapper({title: "Lead removed", status: "success"});
+     
       await fetchCampaignLeads();
       await fetchLeads();
     } catch (err) {
-      toast({
-        title: "Failed to remove lead.",
-        description: "Something went wrong.",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "top-right"
-      });
+      toastWrapper({title: "Failed to remove lead", status: "error"});
     }
   }
   return (

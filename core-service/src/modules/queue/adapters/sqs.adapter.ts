@@ -20,7 +20,8 @@ export class SQSAdapter {
       MessageBody: JSON.stringify(message),
       MessageGroupId: groupId
     });
-    await this.sqsClient.send(command,);
+    
+    await this.sqsClient.send(command);
   }
 
   async receiveMessages(): Promise<any[]> {

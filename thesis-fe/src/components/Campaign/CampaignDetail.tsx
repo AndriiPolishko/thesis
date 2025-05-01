@@ -8,7 +8,8 @@ import {
   HStack,
   Badge,
   Divider,
-  useToast
+  useToast,
+  CloseButton
 } from '@chakra-ui/react'
 import { ArrowLeft } from 'lucide-react'
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -200,6 +201,12 @@ export function CampaignDetail() {
     return <CenterSpinner />
   }
 
+  async function handleRemoveCampaign() {
+    await campaignService.removeCampaign(campaignId);
+
+    navigate('/campaigns');
+  }
+
   return (
     <Box borderWidth="1px" borderRadius="lg" bg="white" p={6} width={['full']} mx="auto">
       <Button
@@ -223,7 +230,8 @@ export function CampaignDetail() {
               onClick={handleCampaignStart}
             >
                 {changeCampaignStatusButtonText}
-              </Button>
+            </Button>
+            <CloseButton onClick={() => handleRemoveCampaign()} />
           </HStack>
         </VStack>
         <Badge

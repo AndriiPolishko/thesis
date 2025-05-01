@@ -30,12 +30,6 @@ class EmailCreationConsumer():
             messages = response.get('Messages', [])
 
             for msg in messages:
-              # Delete message before processing
-              await sqs.delete_message(
-                QueueUrl=self.sqs_message_generation_queue_url,
-                ReceiptHandle=msg["ReceiptHandle"]
-              )
-              
               body = msg["Body"]
               
               try:
@@ -48,6 +42,12 @@ class EmailCreationConsumer():
                   logging.info(f"Received message for lead_id: {message_obj.lead_id}. Starting to handle outgoing.")
                   
                   await email_generation.handle_outgoing(message_obj)
+                
+                # Delete message before processing
+                await sqs.delete_message(
+                  QueueUrl=self.sqs_message_generation_queue_url,
+                  ReceiptHandle=msg["ReceiptHandle"]
+                )
               except Exception as e:
                   logging.exception(f"Error handling message: {e}")
 

@@ -5,6 +5,11 @@ import logging
 
 from config import AWS_REGION, SQS_GENERATED_MESSAGE_QUEUE_URL
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 class EmailProducer:
     def __init__(self):
         self.session = aioboto3.Session()
@@ -20,17 +25,18 @@ class EmailProducer:
             logging.info("SQS EmailProducer stopped.")
 
     async def send_email_payload(self, payload: dict):
+        if not self.sqs_client:
+          await self.initialize()
+      
         try:
             await self.sqs_client.send_message(
                 QueueUrl=SQS_GENERATED_MESSAGE_QUEUE_URL,
                 MessageBody=json.dumps(payload),
-                MessageGroupId=f"generated_email",
-                # Unique ID to avoid duplication
-                # TODO: consider removing
-                MessageDeduplicationId=str(uuid.uuid4())
+                MessageGroupId=f"generated_email"
             )
-            logging.info(f"✅ SQS message sent: {payload}")
+            
+            logging.info(f"SQS message sent: {payload}")
         except Exception as e:
-            logging.exception("❌ Failed to send message to SQS")
+            logging.exception("Failed to send message to SQS")
 
 email_producer = EmailProducer()

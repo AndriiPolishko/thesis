@@ -61,6 +61,12 @@ export const campaignService = {
 
     // Returns the status 
     return response.data;
-  }
+  },
+  removeCampaign: async (campaignId: number) => {
+    const removeCampaignUrl = `${baseApiUrl}/campaign/${campaignId}`
+    const response = await axios.delete(removeCampaignUrl, { withCredentials: true });
+
+    return response.data;
+  },
 }
 

@@ -17,8 +17,8 @@ async def read_root():
 app.include_router(scraping_router)
 
 if __name__ == "__main__":
-    HOST = os.getenv("HOST", "127.0.0.1")
-    PORT = int(os.getenv("PORT", 8000))
+    HOST = os.getenv("HOST", "0.0.0.0")
+    PORT = int(os.getenv("PORT", 5003))
 
     logging.info(f"Starting server at {HOST}:{PORT}")
     

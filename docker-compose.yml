@@ -59,6 +59,18 @@ services:
       - "5002:5002"
     networks:
       - thesis-net
+  
+  frontend:
+    build:
+      context: ./thesis-fe
+      dockerfile: Dockerfile
+    volumes:
+      - ./thesis-fe:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    networks:
+      - thesis-net
 
 
 networks:

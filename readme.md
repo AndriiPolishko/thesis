@@ -10,6 +10,7 @@ Its primary objective is to create a mailing agent that leverages Retrieval-Augm
 
 ## How to Run
 
+Fill all the .env files with fields provided in .env.example.
 All services, including the front-end, can be started using the following command:
 
 ```bash
